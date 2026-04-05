@@ -2,9 +2,9 @@
 // 🔥 FIREBASE CONFIG
 // ===============================
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT_ID"
+  apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
+  authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
+  projectId: "ai-dance-coach-1ecb8"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -15,25 +15,28 @@ const db = firebase.firestore();
 // 🔐 LOGIN
 // ===============================
 async function login(){
-  let email = prompt("Enter Email");
-  let password = "123456";
+
+  let email = document.getElementById("email").value;
+  let password = document.getElementById("password").value;
 
   try{
     await auth.signInWithEmailAndPassword(email,password);
   }catch{
     await auth.createUserWithEmailAndPassword(email,password);
   }
+
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("app").style.display="block";
 }
 
-// ===============================
-// 🎤 VOICE SYSTEM
-// ===============================
-function speak(text){
-  const speech = new SpeechSynthesisUtterance(text);
-  speech.rate = 1;
-  speech.pitch = 1;
-  window.speechSynthesis.speak(speech);
-}
+// AUTO LOGIN
+auth.onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("app").style.display="block";
+    loadLeaderboard();
+  }
+});
 
 // ===============================
 // 🎥 ELEMENTS
@@ -44,27 +47,9 @@ const canvasCtx = canvasElement.getContext('2d');
 
 const teacherVideo = document.getElementById("teacherVideo");
 
-const accuracyText = document.getElementById("accuracy");
-const errorText = document.getElementById("error");
-const feedbackText = document.getElementById("feedback");
-const latencyText = document.getElementById("latency");
-
-// ===============================
-// 📊 CHART
-// ===============================
-const ctxChart = document.getElementById('chart').getContext('2d');
-
-let chart = new Chart(ctxChart,{
-  type:'line',
-  data:{labels:[],datasets:[{label:'Accuracy',data:[]}]},
-  options:{animation:false,scales:{y:{min:0,max:100}}}
-});
-
-// ===============================
 let teacherPoses = [];
 let frameIndex = 0;
 let scores = [];
-let movements = [];
 
 // ===============================
 // 🎬 VIDEO UPLOAD
@@ -74,7 +59,7 @@ document.getElementById("uploadVideo").onchange = (e)=>{
 };
 
 // ===============================
-// 🧠 POSE
+// 🧠 POSE FUNCTIONS
 // ===============================
 function getFullPose(res){
   return [...(res.poseLandmarks||[]),
@@ -113,50 +98,19 @@ function drawErrors(res, errors){
 }
 
 // ===============================
-// 🎯 FEEDBACK + VOICE
+// 🎯 FEEDBACK
 // ===============================
-let lastVoiceTime = 0;
-
 function detectMistakes(errors){
 
   function avg(a){return a.reduce((x,y)=>x+y,0)/a.length;}
 
   let leftArm = avg([errors[11],errors[13],errors[15]]);
   let rightArm = avg([errors[12],errors[14],errors[16]]);
-  let posture = avg([errors[11],errors[12]]);
 
-  let msg = "";
+  if(leftArm>0.05) return "Fix LEFT arm";
+  if(rightArm>0.05) return "Fix RIGHT arm";
 
-  if(leftArm>0.05) msg="Raise your left arm";
-  else if(rightArm>0.05) msg="Adjust your right arm";
-  else if(posture>0.04) msg="Stand straight";
-  else msg="Perfect";
-
-  // 🎤 SPEAK (every 3 sec)
-  if(Date.now() - lastVoiceTime > 3000){
-    speak(msg);
-    lastVoiceTime = Date.now();
-  }
-
-  return msg;
-}
-
-// ===============================
-// 🧠 DANCE STYLE DETECTION
-// ===============================
-function detectStyle(speed){
-
-  if(speed > 0.08) return "🔥 Energetic";
-  if(speed > 0.04) return "💃 Medium";
-  return "🧘 Slow";
-}
-
-// ===============================
-// 🧠 ADAPTIVE SCORE
-// ===============================
-function adaptiveScore(score){
-  let avg = scores.reduce((a,b)=>a+b,0)/scores.length || score;
-  return score*0.7 + avg*0.3;
+  return "Perfect";
 }
 
 // ===============================
@@ -200,7 +154,6 @@ async function startTraining(){
   await extractTeacher();
   frameIndex=0;
   scores=[];
-  movements=[];
   startWebcam();
 }
 
@@ -232,30 +185,21 @@ function onResults(res){
     let errors=getErrors(s,t);
     let total=errors.reduce((a,b)=>a+b,0)/errors.length;
 
-    let score=adaptiveScore(Math.max(0,100-total*150));
+    let score=Math.max(0,100-total*150);
     scores.push(score);
 
-    // movement speed
-    movements.push(total);
-
-    let style = detectStyle(total);
-
-    accuracyText.innerText = score.toFixed(1)+"%";
-    errorText.innerText = total.toFixed(3);
-    feedbackText.innerText = detectMistakes(errors) + " | " + style;
+    document.getElementById("accuracy").innerText=score.toFixed(1);
+    document.getElementById("error").innerText=total.toFixed(3);
+    document.getElementById("feedback").innerText=detectMistakes(errors);
 
     drawErrors(res,errors);
-
-    chart.data.labels.push(frameIndex);
-    chart.data.datasets[0].data.push(score);
-    chart.update();
 
     frameIndex++;
   }
 }
 
 // ===============================
-// 💾 SAVE + LEADERBOARD
+// 💾 SAVE REPORT
 // ===============================
 function finishSession(){
 
@@ -267,10 +211,12 @@ function finishSession(){
   });
 
   alert("Saved!");
+
+  loadLeaderboard();
 }
 
 // ===============================
-// 🏆 GET LEADERBOARD
+// 🏆 LEADERBOARD
 // ===============================
 async function loadLeaderboard(){
 
@@ -279,21 +225,12 @@ async function loadLeaderboard(){
   .limit(5)
   .get();
 
+  let html = "<h2>🏆 Leaderboard</h2>";
+
   snapshot.forEach(doc=>{
-    console.log(doc.data());
+    let d = doc.data();
+    html += `<p>${d.user} - ${d.score.toFixed(1)}</p>`;
   });
-}
 
-// ===============================
-// 📄 DOWNLOAD
-// ===============================
-function downloadReport(){
-
-  let txt = "Final Score: "+scores[scores.length-1];
-
-  let blob=new Blob([txt]);
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="report.txt";
-  a.click();
+  document.getElementById("leaderboard").innerHTML = html;
 }
