@@ -29,15 +29,6 @@ async function login(){
   document.getElementById("app").style.display="block";
 }
 
-// AUTO LOGIN
-auth.onAuthStateChanged(user=>{
-  if(user){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("app").style.display="block";
-    loadLeaderboard();
-  }
-});
-
 // ===============================
 // 🎥 ELEMENTS
 // ===============================
@@ -59,58 +50,49 @@ document.getElementById("uploadVideo").onchange = (e)=>{
 };
 
 // ===============================
-// 🧠 POSE FUNCTIONS
+// 🧠 POSE
 // ===============================
 function getFullPose(res){
-  return [...(res.poseLandmarks||[]),
-  ...(res.leftHandLandmarks||[]),
-  ...(res.rightHandLandmarks||[])];
+  return res.poseLandmarks || [];
 }
 
+// ===============================
+// 📏 NORMALIZE
+// ===============================
 function normalize(p){
-  if(p.length<13) return p;
+  if(!p || p.length<13) return p;
+
   let ls=p[11], rs=p[12];
   let cx=(ls.x+rs.x)/2;
   let cy=(ls.y+rs.y)/2;
   let scale=Math.hypot(ls.x-rs.x, ls.y-rs.y);
+
   return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
 }
 
-function getErrors(a,b){
-  let e=[];
-  for(let i=0;i<Math.min(a.length,b.length);i++){
+// ===============================
+// 📐 ERROR
+// ===============================
+function getError(a,b){
+  let sum=0;
+  for(let i=0;i<33;i++){
     let dx=a[i].x-b[i].x;
     let dy=a[i].y-b[i].y;
-    e.push(Math.sqrt(dx*dx+dy*dy));
+    sum+=Math.sqrt(dx*dx+dy*dy);
   }
-  return e;
+  return sum/33;
 }
 
 // ===============================
-// 🔴 DRAW JOINTS
+// 🎯 FEEDBACK FIX
 // ===============================
-function drawErrors(res, errors){
-  for(let i=0;i<res.poseLandmarks.length;i++){
-    let err = errors[i]||0;
-    let color = err>0.05 ? "red":"green";
-    drawLandmarks(canvasCtx,[res.poseLandmarks[i]],{color:color,lineWidth:5});
-  }
-}
+function detectMistakes(error){
 
-// ===============================
-// 🎯 FEEDBACK
-// ===============================
-function detectMistakes(errors){
+  if(error < 0.05) return "🔥 Perfect";
+  if(error < 0.1) return "👍 Good";
+  if(error < 0.2) return "⚠ Improve posture";
 
-  function avg(a){return a.reduce((x,y)=>x+y,0)/a.length;}
-
-  let leftArm = avg([errors[11],errors[13],errors[15]]);
-  let rightArm = avg([errors[12],errors[14],errors[16]]);
-
-  if(leftArm>0.05) return "Fix LEFT arm";
-  if(rightArm>0.05) return "Fix RIGHT arm";
-
-  return "Perfect";
+  return "❌ Incorrect pose";
 }
 
 // ===============================
@@ -123,9 +105,12 @@ async function extractTeacher(){
   return new Promise(resolve=>{
     const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 
+    h.setOptions({modelComplexity:0}); // 🔥 FAST
+
     h.onResults(r=>{
-      let p=getFullPose(r);
-      if(p.length>0) teacherPoses.push(p);
+      if(r.poseLandmarks){
+        teacherPoses.push(r.poseLandmarks);
+      }
     });
 
     teacherVideo.onplay=async()=>{
@@ -134,9 +119,12 @@ async function extractTeacher(){
 
       async function loop(){
         if(teacherVideo.paused){resolve();return;}
-        c.width=teacherVideo.videoWidth;
-        c.height=teacherVideo.videoHeight;
-        ctx.drawImage(teacherVideo,0,0);
+
+        c.width=320;
+        c.height=240;
+
+        ctx.drawImage(teacherVideo,0,0,320,240);
+
         await h.send({image:c});
         requestAnimationFrame(loop);
       }
@@ -158,16 +146,30 @@ async function startTraining(){
 }
 
 // ===============================
-// 🎥 WEBCAM
+// 🎥 WEBCAM FIX (NO DELAY)
 // ===============================
 function startWebcam(){
-  const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+
+  const h=new Holistic({
+    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+  });
+
+  h.setOptions({
+    modelComplexity:0,
+    smoothLandmarks:true
+  });
+
   h.onResults(onResults);
 
-  new Camera(videoElement,{
-    onFrame: async ()=>await h.send({image:videoElement}),
-    width:640,height:480
-  }).start();
+  const camera = new Camera(videoElement,{
+    onFrame: async ()=>{
+      await h.send({image:videoElement});
+    },
+    width:320,
+    height:240
+  });
+
+  camera.start();
 }
 
 // ===============================
@@ -177,22 +179,20 @@ function onResults(res){
 
   canvasCtx.drawImage(res.image,0,0,640,480);
 
-  let s=normalize(getFullPose(res));
-  let t=normalize(teacherPoses[frameIndex]||[]);
+  let s=normalize(res.poseLandmarks);
+  let t=normalize(teacherPoses[frameIndex] || []);
 
-  if(s.length>0 && t.length>0){
+  if(s && t){
 
-    let errors=getErrors(s,t);
-    let total=errors.reduce((a,b)=>a+b,0)/errors.length;
+    let error=getError(s,t);
 
-    let score=Math.max(0,100-total*150);
+    let score = Math.max(0,100 - error*120); // 🔥 FIXED SCALE
+
     scores.push(score);
 
     document.getElementById("accuracy").innerText=score.toFixed(1);
-    document.getElementById("error").innerText=total.toFixed(3);
-    document.getElementById("feedback").innerText=detectMistakes(errors);
-
-    drawErrors(res,errors);
+    document.getElementById("error").innerText=error.toFixed(3);
+    document.getElementById("feedback").innerText=detectMistakes(error);
 
     frameIndex++;
   }
@@ -211,7 +211,6 @@ function finishSession(){
   });
 
   alert("Saved!");
-
   loadLeaderboard();
 }
 
@@ -233,4 +232,25 @@ async function loadLeaderboard(){
   });
 
   document.getElementById("leaderboard").innerHTML = html;
+}
+
+// ===============================
+// 📄 DOWNLOAD REPORT
+// ===============================
+function downloadReport(){
+
+  let finalScore = scores[scores.length-1];
+
+  let content = `
+AI Dance Report
+
+User: ${auth.currentUser.email}
+Score: ${finalScore}
+`;
+
+  let blob = new Blob([content]);
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "report.txt";
+  a.click();
 }
