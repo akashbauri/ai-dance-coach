@@ -1,31 +1,47 @@
-# AI Dance Coach PRO
+# 💎 AI Dance Coach PRO (Advanced)
 
-## Features
+## 🚀 Features
 
-* Real-time AI dance feedback
-* 500+ body tracking (Holistic)
-* Joint-level error detection
-* Visual red/green joints
-* Live accuracy graph
-* Firebase login + report storage
+* 🎥 Real-time dance tracking (500+ keypoints)
+* 🔴 Wrong joint detection (visual)
+* 🎤 Voice feedback (AI coach)
+* 📊 Live performance graph
+* 🧠 Adaptive AI scoring
+* 💃 Dance style detection
+* 🏆 Leaderboard system
+* 🔐 Firebase login + storage
+* 📄 Downloadable report
 
-## Tech
+---
+
+## 🧠 Tech Stack
 
 * MediaPipe Holistic
-* Firebase
+* Firebase (Auth + Firestore)
 * Chart.js
-* Vercel
+* Web Speech API
 
-## Setup
+---
 
-1. Add Firebase config
-2. Upload to GitHub
-3. Deploy via Vercel
+## 🎯 How It Works
 
-## How it works
+1. Upload teacher video
+2. AI extracts pose
+3. Webcam tracks user
+4. Compare poses
+5. Detect mistakes
+6. Give voice + visual feedback
+7. Save results
+8. Show leaderboard
 
-Video → Pose detection → Compare → Score → Feedback → Save
+---
 
-## Author
+## 🏆 Leaderboard
+
+Top users based on highest score stored in Firebase
+
+---
+
+## 👨‍💻 Author
 
 Akash Bauri
