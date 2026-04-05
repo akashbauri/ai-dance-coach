@@ -1,5 +1,5 @@
 // ===============================
-// 🔥 1. FIREBASE CONFIG
+// 🔥 FIREBASE CONFIG
 // ===============================
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
@@ -12,7 +12,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ===============================
-// 🔐 2. LOGIN SYSTEM
+// 🔐 LOGIN
 // ===============================
 async function login(){
   let email = prompt("Enter Email");
@@ -23,12 +23,20 @@ async function login(){
   }catch{
     await auth.createUserWithEmailAndPassword(email,password);
   }
-
-  alert("Login Success");
 }
 
 // ===============================
-// 🎥 3. ELEMENTS
+// 🎤 VOICE SYSTEM
+// ===============================
+function speak(text){
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.rate = 1;
+  speech.pitch = 1;
+  window.speechSynthesis.speak(speech);
+}
+
+// ===============================
+// 🎥 ELEMENTS
 // ===============================
 const videoElement = document.querySelector('.input_video');
 const canvasElement = document.querySelector('.output_canvas');
@@ -42,135 +50,109 @@ const feedbackText = document.getElementById("feedback");
 const latencyText = document.getElementById("latency");
 
 // ===============================
-// 📊 4. CHART SETUP
+// 📊 CHART
 // ===============================
 const ctxChart = document.getElementById('chart').getContext('2d');
 
 let chart = new Chart(ctxChart,{
   type:'line',
-  data:{
-    labels:[],
-    datasets:[{
-      label:'Accuracy',
-      data:[],
-      borderWidth:2
-    }]
-  },
-  options:{
-    responsive:true,
-    animation:false,
-    scales:{
-      y:{ min:0, max:100 }
-    }
-  }
+  data:{labels:[],datasets:[{label:'Accuracy',data:[]}]},
+  options:{animation:false,scales:{y:{min:0,max:100}}}
 });
 
-// ===============================
-// 📦 5. GLOBAL VARIABLES
 // ===============================
 let teacherPoses = [];
 let frameIndex = 0;
 let scores = [];
-let startTime = 0;
+let movements = [];
 
 // ===============================
-// 🎬 6. VIDEO UPLOAD
+// 🎬 VIDEO UPLOAD
 // ===============================
 document.getElementById("uploadVideo").onchange = (e)=>{
   teacherVideo.src = URL.createObjectURL(e.target.files[0]);
 };
 
 // ===============================
-// 🧠 7. GET FULL BODY (500+)
+// 🧠 POSE
 // ===============================
 function getFullPose(res){
-  return [
-    ...(res.poseLandmarks || []),
-    ...(res.leftHandLandmarks || []),
-    ...(res.rightHandLandmarks || [])
-  ];
+  return [...(res.poseLandmarks||[]),
+  ...(res.leftHandLandmarks||[]),
+  ...(res.rightHandLandmarks||[])];
 }
 
-// ===============================
-// 📏 8. NORMALIZATION
-// ===============================
-function normalize(pose){
-  if(pose.length < 13) return pose;
-
-  let ls = pose[11], rs = pose[12];
-  let cx = (ls.x + rs.x)/2;
-  let cy = (ls.y + rs.y)/2;
-  let scale = Math.hypot(ls.x-rs.x, ls.y-rs.y);
-
-  return pose.map(p=>({
-    x:(p.x-cx)/scale,
-    y:(p.y-cy)/scale
-  }));
+function normalize(p){
+  if(p.length<13) return p;
+  let ls=p[11], rs=p[12];
+  let cx=(ls.x+rs.x)/2;
+  let cy=(ls.y+rs.y)/2;
+  let scale=Math.hypot(ls.x-rs.x, ls.y-rs.y);
+  return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
 }
 
-// ===============================
-// 📐 9. ERROR PER JOINT
-// ===============================
-function getJointErrors(p1, p2){
-  let errors = [];
-  let len = Math.min(p1.length, p2.length);
-
-  for(let i=0;i<len;i++){
-    let dx = p1[i].x - p2[i].x;
-    let dy = p1[i].y - p2[i].y;
-    errors.push(Math.sqrt(dx*dx + dy*dy));
+function getErrors(a,b){
+  let e=[];
+  for(let i=0;i<Math.min(a.length,b.length);i++){
+    let dx=a[i].x-b[i].x;
+    let dy=a[i].y-b[i].y;
+    e.push(Math.sqrt(dx*dx+dy*dy));
   }
-
-  return errors;
+  return e;
 }
 
 // ===============================
-// 🔴 10. DRAW ERROR JOINTS
+// 🔴 DRAW JOINTS
 // ===============================
-function drawErrorJoints(res, errors){
-  if(!res.poseLandmarks) return;
-
+function drawErrors(res, errors){
   for(let i=0;i<res.poseLandmarks.length;i++){
-    let err = errors[i] || 0;
-    let color = err > 0.05 ? "red" : "green";
-
-    drawLandmarks(canvasCtx,[res.poseLandmarks[i]],{
-      color: color,
-      lineWidth: 5
-    });
+    let err = errors[i]||0;
+    let color = err>0.05 ? "red":"green";
+    drawLandmarks(canvasCtx,[res.poseLandmarks[i]],{color:color,lineWidth:5});
   }
 }
 
 // ===============================
-// 🧠 11. SMART FEEDBACK
+// 🎯 FEEDBACK + VOICE
 // ===============================
+let lastVoiceTime = 0;
+
 function detectMistakes(errors){
 
-  function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+  function avg(a){return a.reduce((x,y)=>x+y,0)/a.length;}
 
-  let feedback = [];
+  let leftArm = avg([errors[11],errors[13],errors[15]]);
+  let rightArm = avg([errors[12],errors[14],errors[16]]);
+  let posture = avg([errors[11],errors[12]]);
 
-  let leftArm = avg([errors[11], errors[13], errors[15]]);
-  let rightArm = avg([errors[12], errors[14], errors[16]]);
-  let leftLeg = avg([errors[23], errors[25], errors[27]]);
-  let rightLeg = avg([errors[24], errors[26], errors[28]]);
-  let posture = avg([errors[11], errors[12]]);
+  let msg = "";
 
-  if(leftArm > 0.05) feedback.push("Fix LEFT arm");
-  if(rightArm > 0.05) feedback.push("Fix RIGHT arm");
-  if(leftLeg > 0.05) feedback.push("Fix LEFT leg");
-  if(rightLeg > 0.05) feedback.push("Fix RIGHT leg");
-  if(posture > 0.04) feedback.push("Straighten posture");
+  if(leftArm>0.05) msg="Raise your left arm";
+  else if(rightArm>0.05) msg="Adjust your right arm";
+  else if(posture>0.04) msg="Stand straight";
+  else msg="Perfect";
 
-  if(feedback.length === 0){
-    return "🔥 Perfect!";
+  // 🎤 SPEAK (every 3 sec)
+  if(Date.now() - lastVoiceTime > 3000){
+    speak(msg);
+    lastVoiceTime = Date.now();
   }
 
-  return feedback.join(" | ");
+  return msg;
 }
 
 // ===============================
-// 🧠 12. AI LEARNING (ADAPTIVE)
+// 🧠 DANCE STYLE DETECTION
+// ===============================
+function detectStyle(speed){
+
+  if(speed > 0.08) return "🔥 Energetic";
+  if(speed > 0.04) return "💃 Medium";
+  return "🧘 Slow";
+}
+
+// ===============================
+// 🧠 ADAPTIVE SCORE
 // ===============================
 function adaptiveScore(score){
   let avg = scores.reduce((a,b)=>a+b,0)/scores.length || score;
@@ -178,49 +160,33 @@ function adaptiveScore(score){
 }
 
 // ===============================
-// 🎬 13. EXTRACT TEACHER POSES
+// 🎬 EXTRACT TEACHER
 // ===============================
 async function extractTeacher(){
 
-  teacherPoses = [];
+  teacherPoses=[];
 
   return new Promise(resolve=>{
+    const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 
-    const holistic = new Holistic({
-      locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+    h.onResults(r=>{
+      let p=getFullPose(r);
+      if(p.length>0) teacherPoses.push(p);
     });
 
-    holistic.setOptions({modelComplexity:1});
+    teacherVideo.onplay=async()=>{
+      const c=document.createElement("canvas");
+      const ctx=c.getContext("2d");
 
-    holistic.onResults(res=>{
-      let pose = getFullPose(res);
-      if(pose.length>0){
-        teacherPoses.push(pose);
-      }
-    });
-
-    teacherVideo.onplay = async ()=>{
-
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      async function process(){
-
-        if(teacherVideo.paused || teacherVideo.ended){
-          resolve();
-          return;
-        }
-
-        canvas.width = teacherVideo.videoWidth;
-        canvas.height = teacherVideo.videoHeight;
-
+      async function loop(){
+        if(teacherVideo.paused){resolve();return;}
+        c.width=teacherVideo.videoWidth;
+        c.height=teacherVideo.videoHeight;
         ctx.drawImage(teacherVideo,0,0);
-
-        await holistic.send({image:canvas});
-        requestAnimationFrame(process);
+        await h.send({image:c});
+        requestAnimationFrame(loop);
       }
-
-      process();
+      loop();
     };
 
     teacherVideo.play();
@@ -228,120 +194,106 @@ async function extractTeacher(){
 }
 
 // ===============================
-// 🚀 14. START TRAINING
+// 🚀 START
 // ===============================
 async function startTraining(){
-  feedbackText.innerText = "Processing teacher...";
   await extractTeacher();
-  feedbackText.innerText = "Start dancing!";
-  frameIndex = 0;
-  scores = [];
-  chart.data.labels = [];
-  chart.data.datasets[0].data = [];
-  chart.update();
+  frameIndex=0;
+  scores=[];
+  movements=[];
   startWebcam();
 }
 
 // ===============================
-// 🎥 15. WEBCAM START
+// 🎥 WEBCAM
 // ===============================
 function startWebcam(){
+  const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+  h.onResults(onResults);
 
-  const holistic = new Holistic({
-    locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
-  });
-
-  holistic.setOptions({
-    modelComplexity:1,
-    smoothLandmarks:true
-  });
-
-  holistic.onResults(onResults);
-
-  const camera = new Camera(videoElement,{
-    onFrame: async ()=>{
-      startTime = performance.now();
-      await holistic.send({image:videoElement});
-    },
-    width:640,
-    height:480
-  });
-
-  camera.start();
+  new Camera(videoElement,{
+    onFrame: async ()=>await h.send({image:videoElement}),
+    width:640,height:480
+  }).start();
 }
 
 // ===============================
-// ⚡ 16. MAIN AI LOOP
+// ⚡ MAIN LOOP
 // ===============================
 function onResults(res){
 
-  canvasCtx.clearRect(0,0,640,480);
   canvasCtx.drawImage(res.image,0,0,640,480);
 
-  let student = normalize(getFullPose(res));
-  let teacher = normalize(teacherPoses[Math.min(frameIndex, teacherPoses.length-1)] || []);
+  let s=normalize(getFullPose(res));
+  let t=normalize(teacherPoses[frameIndex]||[]);
 
-  if(student.length>0 && teacher.length>0){
+  if(s.length>0 && t.length>0){
 
-    let errors = getJointErrors(student, teacher);
-    let totalError = errors.reduce((a,b)=>a+b,0)/errors.length;
+    let errors=getErrors(s,t);
+    let total=errors.reduce((a,b)=>a+b,0)/errors.length;
 
-    let rawScore = Math.max(0,100 - totalError*150);
-    let score = adaptiveScore(rawScore);
-
+    let score=adaptiveScore(Math.max(0,100-total*150));
     scores.push(score);
 
-    // UI UPDATE
-    accuracyText.innerText = score.toFixed(1) + "%";
-    errorText.innerText = totalError.toFixed(4);
-    feedbackText.innerText = detectMistakes(errors);
+    // movement speed
+    movements.push(total);
 
-    // 🔴 VISUAL ERROR
-    drawErrorJoints(res, errors);
+    let style = detectStyle(total);
 
-    // 📊 GRAPH UPDATE
+    accuracyText.innerText = score.toFixed(1)+"%";
+    errorText.innerText = total.toFixed(3);
+    feedbackText.innerText = detectMistakes(errors) + " | " + style;
+
+    drawErrors(res,errors);
+
     chart.data.labels.push(frameIndex);
     chart.data.datasets[0].data.push(score);
     chart.update();
 
     frameIndex++;
-
-    // LATENCY
-    let latency = performance.now() - startTime;
-    latencyText.innerText = latency.toFixed(0) + " ms";
   }
 }
 
 // ===============================
-// 💾 17. SAVE REPORT
+// 💾 SAVE + LEADERBOARD
 // ===============================
 function finishSession(){
 
+  let finalScore = scores[scores.length-1];
+
   db.collection("reports").add({
-    user: auth.currentUser.email,
-    scores: scores,
-    finalScore: scores[scores.length-1],
-    timestamp: new Date()
+    user:auth.currentUser.email,
+    score:finalScore
   });
 
-  alert("Report Saved!");
+  alert("Saved!");
 }
 
 // ===============================
-// 📄 18. DOWNLOAD REPORT
+// 🏆 GET LEADERBOARD
+// ===============================
+async function loadLeaderboard(){
+
+  let snapshot = await db.collection("reports")
+  .orderBy("score","desc")
+  .limit(5)
+  .get();
+
+  snapshot.forEach(doc=>{
+    console.log(doc.data());
+  });
+}
+
+// ===============================
+// 📄 DOWNLOAD
 // ===============================
 function downloadReport(){
 
-  let content = `
-AI Dance Report
+  let txt = "Final Score: "+scores[scores.length-1];
 
-Final Score: ${scores[scores.length-1]}
-All Scores: ${scores.join(", ")}
-`;
-
-  let blob = new Blob([content],{type:"text/plain"});
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "report.txt";
+  let blob=new Blob([txt]);
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="report.txt";
   a.click();
 }
