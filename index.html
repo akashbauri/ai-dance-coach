@@ -1,31 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>AI Dance Coach PRO</title>
-
-<link rel="stylesheet" href="style.css">
-
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-</head>
-
-<body>
-
 <h1>💎 AI Dance Coach PRO</h1>
 
 <!-- LOGIN -->
 <div id="loginBox">
-  <input type="email" id="email" placeholder="Email"><br>
-  <input type="password" id="password" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
+  <h2>🔐 Login / Sign Up</h2>
+
+  <input type="email" id="email" placeholder="Enter Email"><br><br>
+  <input type="password" id="password" placeholder="Enter Password"><br><br>
+
+  <button onclick="login()">Login / Signup</button>
 </div>
 
 <!-- APP -->
@@ -34,6 +16,7 @@
 <input type="file" id="uploadVideo">
 <button onclick="startTraining()">Start</button>
 <button onclick="finishSession()">Finish</button>
+<button onclick="downloadReport()">📄 Download Report</button>
 
 <div class="container">
 
@@ -44,18 +27,10 @@
 
 </div>
 
-<div>
 <h3>Accuracy: <span id="accuracy">0</span>%</h3>
 <h3>Error: <span id="error">0</span></h3>
 <h3>Feedback: <span id="feedback"></span></h3>
-</div>
 
-<!-- Leaderboard -->
 <div id="leaderboard"></div>
 
 </div>
-
-<script src="script.js"></script>
-
-</body>
-</html>
