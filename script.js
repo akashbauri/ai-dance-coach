@@ -1,6 +1,4 @@
-// ===============================
-// 🔥 FIREBASE CONFIG
-// ===============================
+// FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
   authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
@@ -11,92 +9,48 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ===============================
-// 🔐 LOGIN
-// ===============================
+// LOGIN
 async function login(){
-
-  let email = document.getElementById("email").value;
-  let password = document.getElementById("password").value;
+  let email = emailInput.value;
+  let pass = password.value;
 
   try{
-    await auth.signInWithEmailAndPassword(email,password);
-    alert("Login Success");
-  }catch(e){
-    try{
-      await auth.createUserWithEmailAndPassword(email,password);
-      alert("Account Created");
-    }catch(err){
-      alert(err.message);
-      return;
-    }
+    await auth.signInWithEmailAndPassword(email,pass);
+  }catch{
+    await auth.createUserWithEmailAndPassword(email,pass);
   }
-
-  document.getElementById("loginBox").style.display="none";
-  document.getElementById("app").style.display="block";
 }
 
-// ===============================
-// 🔵 GOOGLE LOGIN
-// ===============================
 async function googleLogin(){
-
   const provider = new firebase.auth.GoogleAuthProvider();
-
-  try{
-    await auth.signInWithPopup(provider);
-  }catch(e){
-    alert(e.message);
-    return;
-  }
-
-  document.getElementById("loginBox").style.display="none";
-  document.getElementById("app").style.display="block";
+  await auth.signInWithPopup(provider);
 }
 
 // AUTO LOGIN
 auth.onAuthStateChanged(user=>{
   if(user){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("app").style.display="block";
+    loginBox.style.display="none";
+    app.style.display="block";
     loadLeaderboard();
   }
 });
 
-// ===============================
-// 🎥 ELEMENTS
-// ===============================
-const videoElement = document.querySelector('.input_video');
-const canvasElement = document.querySelector('.output_canvas');
-const canvasCtx = canvasElement.getContext('2d');
+// VIDEO
+uploadVideo.onchange = e=>{
+  let file=e.target.files[0];
 
-const teacherVideo = document.getElementById("teacherVideo");
-
-let teacherPoses = [];
-let frameIndex = 0;
-let scores = [];
-
-// ===============================
-// 🎬 VIDEO UPLOAD (30MB LIMIT)
-// ===============================
-document.getElementById("uploadVideo").onchange = (e)=>{
-
-  let file = e.target.files[0];
-
-  if(file.size > 30 * 1024 * 1024){
-    alert("❌ File too large! Max 30MB allowed");
+  if(file.size > 30*1024*1024){
+    alert("Max 30MB only");
     return;
   }
 
   teacherVideo.src = URL.createObjectURL(file);
 };
 
-// ===============================
-// 🧠 POSE
-// ===============================
-function normalize(p){
-  if(!p || p.length<13) return p;
+let teacherPoses=[], scores=[], frameIndex=0;
 
+// NORMALIZE
+function normalize(p){
   let ls=p[11], rs=p[12];
   let cx=(ls.x+rs.x)/2;
   let cy=(ls.y+rs.y)/2;
@@ -105,6 +59,7 @@ function normalize(p){
   return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
 }
 
+// ERROR
 function getError(a,b){
   let sum=0;
   for(let i=0;i<33;i++){
@@ -115,29 +70,22 @@ function getError(a,b){
   return sum/33;
 }
 
-function detectMistakes(error){
-  if(error < 0.05) return "🔥 Perfect";
-  if(error < 0.1) return "👍 Good";
-  if(error < 0.2) return "⚠ Improve posture";
-  return "❌ Incorrect pose";
+// FEEDBACK
+function feedback(e){
+  if(e<0.05) return "🔥 Perfect";
+  if(e<0.1) return "👍 Good";
+  return "⚠ Improve";
 }
 
-// ===============================
-// 🎬 EXTRACT TEACHER
-// ===============================
+// EXTRACT TEACHER
 async function extractTeacher(){
-
   teacherPoses=[];
 
   return new Promise(resolve=>{
     const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 
-    h.setOptions({modelComplexity:0});
-
     h.onResults(r=>{
-      if(r.poseLandmarks){
-        teacherPoses.push(r.poseLandmarks);
-      }
+      if(r.poseLandmarks) teacherPoses.push(r.poseLandmarks);
     });
 
     teacherVideo.onplay=async()=>{
@@ -146,12 +94,7 @@ async function extractTeacher(){
 
       async function loop(){
         if(teacherVideo.paused){resolve();return;}
-
-        c.width=320;
-        c.height=240;
-
         ctx.drawImage(teacherVideo,0,0,320,240);
-
         await h.send({image:c});
         requestAnimationFrame(loop);
       }
@@ -162,9 +105,7 @@ async function extractTeacher(){
   });
 }
 
-// ===============================
-// 🚀 START
-// ===============================
+// START
 async function startTraining(){
   await extractTeacher();
   frameIndex=0;
@@ -172,109 +113,81 @@ async function startTraining(){
   startWebcam();
 }
 
-// ===============================
-// 🎥 WEBCAM
-// ===============================
+// WEBCAM
 function startWebcam(){
-
-  const h=new Holistic({
-    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
-  });
-
-  h.setOptions({
-    modelComplexity:0,
-    smoothLandmarks:true
-  });
-
+  const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
   h.onResults(onResults);
 
-  const camera = new Camera(videoElement,{
-    onFrame: async ()=>await h.send({image:videoElement}),
-    width:320,
-    height:240
-  });
-
-  camera.start();
+  new Camera(input_video,{
+    onFrame: async ()=>await h.send({image:input_video}),
+    width:320,height:240
+  }).start();
 }
 
-// ===============================
-// ⚡ MAIN LOOP
-// ===============================
+// LOOP
 function onResults(res){
 
-  canvasCtx.drawImage(res.image,0,0,640,480);
+  output_canvas.getContext("2d").drawImage(res.image,0,0,640,480);
 
   let s=normalize(res.poseLandmarks);
-  let t=normalize(teacherPoses[frameIndex] || []);
+  let t=normalize(teacherPoses[frameIndex]||[]);
 
   if(s && t){
 
-    let error=getError(s,t);
-    let score = Math.max(0,100 - error*120);
+    let err=getError(s,t);
+    let score=Math.max(0,100-err*120);
 
     scores.push(score);
 
-    document.getElementById("accuracy").innerText=score.toFixed(1);
-    document.getElementById("error").innerText=error.toFixed(3);
-    document.getElementById("feedback").innerText=detectMistakes(error);
+    accuracy.innerText=score.toFixed(1);
+    error.innerText=err.toFixed(3);
+    feedback.innerText=feedback(err);
+
+    avg.innerText=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
 
     frameIndex++;
   }
 }
 
-// ===============================
-// 💾 SAVE REPORT
-// ===============================
+// SAVE
 function finishSession(){
-
-  let finalScore = scores[scores.length-1];
+  let finalScore=scores[scores.length-1];
 
   db.collection("reports").add({
     user:auth.currentUser.email,
     score:finalScore
   });
 
-  alert("Saved!");
   loadLeaderboard();
 }
 
-// ===============================
-// 🏆 LEADERBOARD
-// ===============================
+// LEADERBOARD
 async function loadLeaderboard(){
-
-  let snapshot = await db.collection("reports")
+  let snap=await db.collection("reports")
   .orderBy("score","desc")
-  .limit(5)
-  .get();
+  .limit(5).get();
 
-  let html = "<h2>🏆 Leaderboard</h2>";
-
-  snapshot.forEach(doc=>{
-    let d = doc.data();
-    html += `<p>${d.user} - ${d.score.toFixed(1)}</p>`;
+  let html="<h2>🏆 Leaderboard</h2>";
+  snap.forEach(d=>{
+    html+=`<p>${d.data().user} - ${d.data().score.toFixed(1)}</p>`;
   });
 
-  document.getElementById("leaderboard").innerHTML = html;
+  leaderboard.innerHTML=html;
 }
 
-// ===============================
-// 📄 DOWNLOAD REPORT
-// ===============================
-function downloadReport(){
+// PDF REPORT
+function downloadPDF(){
 
-  let finalScore = scores[scores.length-1];
+  const { jsPDF } = window.jspdf;
+  let doc = new jsPDF();
 
-  let content = `
-AI Dance Report
+  let finalScore=scores[scores.length-1];
+  let avgScore=(scores.reduce((a,b)=>a+b,0)/scores.length);
 
-User: ${auth.currentUser.email}
-Score: ${finalScore}
-`;
+  doc.text("AI Dance Report",20,20);
+  doc.text("User: "+auth.currentUser.email,20,40);
+  doc.text("Final Score: "+finalScore.toFixed(2),20,60);
+  doc.text("Average Score: "+avgScore.toFixed(2),20,80);
 
-  let blob = new Blob([content]);
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "report.txt";
-  a.click();
+  doc.save("Dance_Report.pdf");
 }
