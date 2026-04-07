@@ -10,10 +10,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 
-<!-- Firebase (IMPORTANT ORDER) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<!-- jsPDF (PDF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 </head>
 
@@ -21,42 +24,44 @@
 
 <h1>💎 AI Dance Coach PRO</h1>
 
-<!-- LOGIN -->
-<div id="loginBox">
+<div id="loginBox" class="card">
   <h2>🔐 Login / Sign Up</h2>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
 
-  <input type="email" id="email" placeholder="Enter Email"><br><br>
-  <input type="password" id="password" placeholder="Enter Password"><br><br>
-
-  <button onclick="login()">Login / Signup</button><br><br>
-  <button onclick="googleLogin()">🔵 Sign in with Google</button>
+  <button onclick="login()">Login / Signup</button>
+  <button onclick="googleLogin()">🔵 Google Sign-In</button>
 </div>
 
-<!-- APP -->
 <div id="app" style="display:none;">
 
-<h3>Upload Teacher Video (Max 30MB)</h3>
-<input type="file" id="uploadVideo">
+<div class="card">
 
-<br><br>
-<button onclick="startTraining()">▶ Start Training</button>
+<input type="file" id="uploadVideo">
+<button onclick="startTraining()">▶ Start</button>
 <button onclick="finishSession()">✅ Finish</button>
-<button onclick="downloadReport()">📄 Download Report</button>
+<button onclick="downloadPDF()">📄 Download PDF</button>
+
+</div>
 
 <div class="container">
 
 <video id="teacherVideo" width="300" controls></video>
-
 <video class="input_video" style="display:none"></video>
 <canvas class="output_canvas" width="640" height="480"></canvas>
 
 </div>
 
-<h3>Accuracy: <span id="accuracy">0</span>%</h3>
-<h3>Error: <span id="error">0</span></h3>
-<h3>Feedback: <span id="feedback"></span></h3>
+<div class="dashboard">
 
-<div id="leaderboard"></div>
+<div class="card">Accuracy: <span id="accuracy">0</span>%</div>
+<div class="card">Error: <span id="error">0</span></div>
+<div class="card">Feedback: <span id="feedback"></span></div>
+<div class="card">Avg Score: <span id="avg">0</span>%</div>
+
+</div>
+
+<div id="leaderboard" class="card"></div>
 
 </div>
 
