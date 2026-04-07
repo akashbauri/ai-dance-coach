@@ -21,13 +21,47 @@ async function login(){
 
   try{
     await auth.signInWithEmailAndPassword(email,password);
-  }catch{
-    await auth.createUserWithEmailAndPassword(email,password);
+    alert("Login Success");
+  }catch(e){
+    try{
+      await auth.createUserWithEmailAndPassword(email,password);
+      alert("Account Created");
+    }catch(err){
+      alert(err.message);
+      return;
+    }
   }
 
   document.getElementById("loginBox").style.display="none";
   document.getElementById("app").style.display="block";
 }
+
+// ===============================
+// 🔵 GOOGLE LOGIN
+// ===============================
+async function googleLogin(){
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  try{
+    await auth.signInWithPopup(provider);
+  }catch(e){
+    alert(e.message);
+    return;
+  }
+
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("app").style.display="block";
+}
+
+// AUTO LOGIN
+auth.onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("app").style.display="block";
+    loadLeaderboard();
+  }
+});
 
 // ===============================
 // 🎥 ELEMENTS
@@ -43,21 +77,22 @@ let frameIndex = 0;
 let scores = [];
 
 // ===============================
-// 🎬 VIDEO UPLOAD
+// 🎬 VIDEO UPLOAD (30MB LIMIT)
 // ===============================
 document.getElementById("uploadVideo").onchange = (e)=>{
-  teacherVideo.src = URL.createObjectURL(e.target.files[0]);
+
+  let file = e.target.files[0];
+
+  if(file.size > 30 * 1024 * 1024){
+    alert("❌ File too large! Max 30MB allowed");
+    return;
+  }
+
+  teacherVideo.src = URL.createObjectURL(file);
 };
 
 // ===============================
 // 🧠 POSE
-// ===============================
-function getFullPose(res){
-  return res.poseLandmarks || [];
-}
-
-// ===============================
-// 📏 NORMALIZE
 // ===============================
 function normalize(p){
   if(!p || p.length<13) return p;
@@ -70,9 +105,6 @@ function normalize(p){
   return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
 }
 
-// ===============================
-// 📐 ERROR
-// ===============================
 function getError(a,b){
   let sum=0;
   for(let i=0;i<33;i++){
@@ -83,15 +115,10 @@ function getError(a,b){
   return sum/33;
 }
 
-// ===============================
-// 🎯 FEEDBACK FIX
-// ===============================
 function detectMistakes(error){
-
   if(error < 0.05) return "🔥 Perfect";
   if(error < 0.1) return "👍 Good";
   if(error < 0.2) return "⚠ Improve posture";
-
   return "❌ Incorrect pose";
 }
 
@@ -105,7 +132,7 @@ async function extractTeacher(){
   return new Promise(resolve=>{
     const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 
-    h.setOptions({modelComplexity:0}); // 🔥 FAST
+    h.setOptions({modelComplexity:0});
 
     h.onResults(r=>{
       if(r.poseLandmarks){
@@ -146,7 +173,7 @@ async function startTraining(){
 }
 
 // ===============================
-// 🎥 WEBCAM FIX (NO DELAY)
+// 🎥 WEBCAM
 // ===============================
 function startWebcam(){
 
@@ -162,9 +189,7 @@ function startWebcam(){
   h.onResults(onResults);
 
   const camera = new Camera(videoElement,{
-    onFrame: async ()=>{
-      await h.send({image:videoElement});
-    },
+    onFrame: async ()=>await h.send({image:videoElement}),
     width:320,
     height:240
   });
@@ -185,8 +210,7 @@ function onResults(res){
   if(s && t){
 
     let error=getError(s,t);
-
-    let score = Math.max(0,100 - error*120); // 🔥 FIXED SCALE
+    let score = Math.max(0,100 - error*120);
 
     scores.push(score);
 
