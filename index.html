@@ -3,18 +3,20 @@
 <head>
 <title>AI Dance Coach PRO</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link rel="stylesheet" href="style.css">
 
 <!-- MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<!-- Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -23,54 +25,37 @@
 
 <body>
 
-<div class="navbar">
-  <h1>💎 AI Dance Coach PRO</h1>
-</div>
+<h1>💎 AI Dance Coach PRO</h1>
 
 <!-- LOGIN -->
-<div id="loginBox" class="card center">
-  <h2>Login</h2>
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login / Signup</button>
-  <button onclick="googleLogin()">Google Sign-in</button>
+<div id="loginBox">
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <button onclick="login()">Login</button>
+  <button onclick="googleLogin()">Google Login</button>
 </div>
 
 <!-- APP -->
 <div id="app" style="display:none;">
 
-<div class="controls card">
-<input type="file" id="uploadVideo">
+<input type="file" id="uploadVideo"><br>
 <button onclick="startTraining()">Start</button>
 <button onclick="finishSession()">Finish</button>
 <button onclick="downloadPDF()">Download PDF</button>
+
+<div style="display:flex">
+  <video id="teacherVideo" width="300" controls></video>
+  <video class="input_video" style="display:none"></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
 </div>
 
-<div class="main">
+<h3>Accuracy: <span id="accuracy">0</span></h3>
+<h3>Error: <span id="error">0</span></h3>
+<h3>Feedback: <span id="feedback"></span></h3>
 
-<div class="video-box card">
-<h3>Teacher</h3>
-<video id="teacherVideo" controls></video>
-</div>
+<canvas id="chart"></canvas>
 
-<div class="video-box card">
-<h3>You</h3>
-<video class="input_video" autoplay playsinline></video>
-<canvas class="output_canvas"></canvas>
-</div>
-
-</div>
-
-<div class="stats">
-
-<div class="card">Accuracy: <span id="accuracy">0</span>%</div>
-<div class="card">Error: <span id="error">0</span></div>
-<div class="card">Feedback: <span id="feedback"></span></div>
-<div class="card">Avg: <span id="avg">0</span>%</div>
-
-</div>
-
-<div id="leaderboard" class="card"></div>
+<div id="leaderboard"></div>
 
 </div>
 
