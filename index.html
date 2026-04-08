@@ -27,34 +27,31 @@
 
 <h1>💎 AI Dance Coach PRO</h1>
 
-<!-- LOGIN -->
 <div id="loginBox">
-  <input id="email" placeholder="Email"><br>
-  <input id="password" type="password" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
-  <button onclick="googleLogin()">Google Login</button>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+<button onclick="googleLogin()">Google</button>
 </div>
 
-<!-- APP -->
 <div id="app" style="display:none;">
 
-<input type="file" id="uploadVideo"><br>
-<button onclick="startTraining()">Start</button>
-<button onclick="finishSession()">Finish</button>
+<input type="file" id="uploadVideo">
+
+<button onclick="start()">Start</button>
+<button onclick="finish()">Finish</button>
 <button onclick="downloadPDF()">Download PDF</button>
 
-<div style="display:flex">
-  <video id="teacherVideo" width="300" controls></video>
-  <video class="input_video" style="display:none"></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
-</div>
+<video id="teacherVideo" controls></video>
+<video class="input_video" style="display:none"></video>
+<canvas id="canvas"></canvas>
 
-<h3>Accuracy: <span id="accuracy">0</span></h3>
-<h3>Error: <span id="error">0</span></h3>
-<h3>Feedback: <span id="feedback"></span></h3>
+<h3>Score: <span id="score">0</span></h3>
 
 <canvas id="chart"></canvas>
 
+<h3>Leaderboard</h3>
 <div id="leaderboard"></div>
 
 </div>
