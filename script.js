@@ -1,18 +1,34 @@
 // ================= FIREBASE =================
 const firebaseConfig = {
-  apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
-  authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
-  projectId: "ai-dance-coach-1ecb8"
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ================= DOM =================
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const loginBox = document.getElementById("loginBox");
+const app = document.getElementById("app");
+
+const teacherVideo = document.getElementById("teacherVideo");
+const video = document.querySelector(".input_video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const accuracy = document.getElementById("accuracy");
+const error = document.getElementById("error");
+const feedbackText = document.getElementById("feedback");
+
 // ================= LOGIN =================
 async function login(){
-  let email = document.getElementById("email").value;
-  let pass = document.getElementById("password").value;
+  let email = emailInput.value;
+  let pass = passwordInput.value;
 
   try{
     await auth.signInWithEmailAndPassword(email,pass);
@@ -28,43 +44,23 @@ async function googleLogin(){
 
 auth.onAuthStateChanged(user=>{
   if(user){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("app").style.display="block";
-    loadLeaderboard();
+    loginBox.style.display="none";
+    app.style.display="block";
+    initChart();
   }
 });
 
 // ================= VIDEO =================
-const video = document.querySelector(".input_video");
-const canvas = document.querySelector(".output_canvas");
-const ctx = canvas.getContext("2d");
-const teacherVideo = document.getElementById("teacherVideo");
-
 document.getElementById("uploadVideo").onchange = e=>{
-  let file = e.target.files[0];
-
-  if(file.size > 30*1024*1024){
-    alert("Max 30MB");
-    return;
-  }
-
-  teacherVideo.src = URL.createObjectURL(file);
+  teacherVideo.src = URL.createObjectURL(e.target.files[0]);
 };
 
-// ================= CAMERA =================
-async function startCamera(){
-
-  let stream = await navigator.mediaDevices.getUserMedia({video:true});
-  video.srcObject = stream;
-
+// ================= POSE =================
+function getFullPose(r){
+  return r.poseLandmarks || [];
 }
 
-// ================= POSE =================
-let teacherPoses=[], scores=[], frameIndex=0;
-
 function normalize(p){
-  if(!p) return null;
-
   let ls=p[11], rs=p[12];
   let cx=(ls.x+rs.x)/2;
   let cy=(ls.y+rs.y)/2;
@@ -73,7 +69,7 @@ function normalize(p){
   return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
 }
 
-function error(a,b){
+function getError(a,b){
   let sum=0;
   for(let i=0;i<33;i++){
     let dx=a[i].x-b[i].x;
@@ -83,88 +79,145 @@ function error(a,b){
   return sum/33;
 }
 
+// ================= SMOOTH =================
+let prevPose=null;
+
+function smooth(p){
+  if(!prevPose){ prevPose=p; return p; }
+
+  let sm=p.map((pt,i)=>({
+    x: prevPose[i].x*0.7 + pt.x*0.3,
+    y: prevPose[i].y*0.7 + pt.y*0.3
+  }));
+
+  prevPose=sm;
+  return sm;
+}
+
+// ================= GLOBAL =================
+let teacherPoses=[];
+let scores=[];
+
+// ================= EXTRACT =================
+async function extractTeacher(){
+
+  teacherPoses=[];
+
+  return new Promise(resolve=>{
+
+    const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+
+    h.onResults(r=>{
+      if(r.poseLandmarks){
+        teacherPoses.push(r.poseLandmarks);
+      }
+    });
+
+    teacherVideo.onplay=()=>{
+      const c=document.createElement("canvas");
+      const cx=c.getContext("2d");
+
+      function loop(){
+        if(teacherVideo.paused){resolve();return;}
+        cx.drawImage(teacherVideo,0,0,320,240);
+        h.send({image:c});
+        requestAnimationFrame(loop);
+      }
+      loop();
+    };
+
+    teacherVideo.play();
+  });
+}
+
 // ================= START =================
 async function startTraining(){
+  await extractTeacher();
+  startCamera();
+}
 
-  await startCamera();
+// ================= CAMERA =================
+function startCamera(){
 
-  const holistic = new Holistic({
-    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+  navigator.mediaDevices.getUserMedia({video:true})
+  .then(stream=>{
+    video.srcObject=stream;
   });
 
-  holistic.onResults(onResults);
+  const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+
+  h.onResults(onResults);
 
   new Camera(video,{
-    onFrame: async ()=>{
-      await holistic.send({image:video});
-    }
+    onFrame: async()=>await h.send({image:video})
   }).start();
 }
 
-// ================= LOOP =================
-function onResults(res){
+// ================= MAIN =================
+function onResults(r){
 
-  ctx.drawImage(res.image,0,0,640,480);
+  ctx.drawImage(r.image,0,0,640,480);
 
-  if(!res.poseLandmarks) return;
+  if(!r.poseLandmarks) return;
 
-  let s = normalize(res.poseLandmarks);
-  let t = s; // simplified for stability
+  let user = smooth(normalize(getFullPose(r)));
 
-  let err = error(s,t);
+  let frame = Math.floor(teacherVideo.currentTime * 30);
+  let teacher = normalize(teacherPoses[frame] || []);
+
+  if(!teacher.length) return;
+
+  let err = getError(user,teacher);
   let score = 100 - err*100;
 
   scores.push(score);
 
-  document.getElementById("accuracy").innerText=score.toFixed(1);
-  document.getElementById("error").innerText=err.toFixed(3);
-  document.getElementById("feedback").innerText = score>80 ? "🔥 Perfect" : "Improve";
-  document.getElementById("avg").innerText =
-    (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  // draw skeleton
+  drawConnectors(ctx, r.poseLandmarks, POSE_CONNECTIONS);
+  drawLandmarks(ctx, r.poseLandmarks);
+
+  accuracy.innerText = score.toFixed(1);
+  error.innerText = err.toFixed(3);
+  feedbackText.innerText = score>80?"Good":"Improve";
+
+  updateChart(score);
+}
+
+// ================= CHART =================
+let chart;
+
+function initChart(){
+  chart = new Chart(document.getElementById("chart"),{
+    type:"line",
+    data:{labels:[],datasets:[{data:[]}]}
+  });
+}
+
+function updateChart(score){
+  chart.data.labels.push(chart.data.labels.length);
+  chart.data.datasets[0].data.push(score);
+  chart.update();
 }
 
 // ================= SAVE =================
 function finishSession(){
-
-  let finalScore = scores[scores.length-1] || 0;
+  let final = scores[scores.length-1];
 
   db.collection("reports").add({
     user: auth.currentUser.email,
-    score: finalScore
+    score: final
   });
-
-  loadLeaderboard();
-}
-
-// ================= LEADERBOARD =================
-async function loadLeaderboard(){
-
-  let snap = await db.collection("reports")
-  .orderBy("score","desc")
-  .limit(5).get();
-
-  let html="<h3>Leaderboard</h3>";
-
-  snap.forEach(d=>{
-    html+=`<p>${d.data().user} - ${d.data().score.toFixed(1)}</p>`;
-  });
-
-  document.getElementById("leaderboard").innerHTML=html;
 }
 
 // ================= PDF =================
 function downloadPDF(){
-
   const { jsPDF } = window.jspdf;
   let doc = new jsPDF();
 
   let final = scores[scores.length-1] || 0;
-  let avg = (scores.reduce((a,b)=>a+b,0)/scores.length) || 0;
 
   doc.text("AI Dance Report",20,20);
-  doc.text("User: "+auth.currentUser.email,20,40);
-  doc.text("Score: "+final.toFixed(2),20,60);
-  doc.text("Avg: "+avg.toFixed(2),20,80);
+  doc.text("Score: "+final.toFixed(2),20,40);
 
   doc.save("report.pdf");
 }
