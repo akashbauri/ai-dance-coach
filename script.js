@@ -1,195 +1,74 @@
-// ================= FIREBASE =================
+document.addEventListener("DOMContentLoaded",()=>{
+
+// ================= FIREBASE CONFIG =================
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT"
+  apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
+  authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
+  projectId: "ai-dance-coach-1ecb8",
+  storageBucket: "ai-dance-coach-1ecb8.firebasestorage.app",
+  messagingSenderId: "1023492993370",
+  appId: "1:1023492993370:web:9bd0b563a8f565f074c363",
+  measurementId: "G-LN1SJMB5J8"
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ================= DOM =================
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-
-const loginBox = document.getElementById("loginBox");
-const app = document.getElementById("app");
-
-const teacherVideo = document.getElementById("teacherVideo");
-const video = document.querySelector(".input_video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const accuracy = document.getElementById("accuracy");
-const error = document.getElementById("error");
-const feedbackText = document.getElementById("feedback");
-
 // ================= LOGIN =================
-async function login(){
-  let email = emailInput.value;
-  let pass = passwordInput.value;
+const loginBtn = document.getElementById("loginBtn");
+const googleBtn = document.getElementById("googleBtn");
+
+loginBtn.onclick = async ()=>{
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
 
   try{
     await auth.signInWithEmailAndPassword(email,pass);
   }catch{
     await auth.createUserWithEmailAndPassword(email,pass);
   }
-}
+};
 
-async function googleLogin(){
-  const provider = new firebase.auth.GoogleAuthProvider();
-  await auth.signInWithPopup(provider);
-}
+googleBtn.onclick = async ()=>{
+  await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+};
 
+// ================= SESSION =================
 auth.onAuthStateChanged(user=>{
   if(user){
-    loginBox.style.display="none";
-    app.style.display="block";
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("app").style.display="block";
     initChart();
+    loadLeaderboard();
   }
 });
 
-// ================= VIDEO =================
-document.getElementById("uploadVideo").onchange = e=>{
-  teacherVideo.src = URL.createObjectURL(e.target.files[0]);
-};
+// ================= DOM =================
+const video = document.querySelector(".input_video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-// ================= POSE =================
-function getFullPose(r){
-  return r.poseLandmarks || [];
-}
+const teacherVideo = document.getElementById("teacherVideo");
+const scoreText = document.getElementById("score");
+const feedbackText = document.getElementById("feedback");
 
-function normalize(p){
-  let ls=p[11], rs=p[12];
-  let cx=(ls.x+rs.x)/2;
-  let cy=(ls.y+rs.y)/2;
-  let scale=Math.hypot(ls.x-rs.x, ls.y-rs.y);
-
-  return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
-}
-
-function getError(a,b){
-  let sum=0;
-  for(let i=0;i<33;i++){
-    let dx=a[i].x-b[i].x;
-    let dy=a[i].y-b[i].y;
-    sum+=Math.sqrt(dx*dx+dy*dy);
-  }
-  return sum/33;
-}
-
-// ================= SMOOTH =================
-let prevPose=null;
-
-function smooth(p){
-  if(!prevPose){ prevPose=p; return p; }
-
-  let sm=p.map((pt,i)=>({
-    x: prevPose[i].x*0.7 + pt.x*0.3,
-    y: prevPose[i].y*0.7 + pt.y*0.3
-  }));
-
-  prevPose=sm;
-  return sm;
-}
-
-// ================= GLOBAL =================
-let teacherPoses=[];
-let scores=[];
-
-// ================= EXTRACT =================
-async function extractTeacher(){
-
-  teacherPoses=[];
-
-  return new Promise(resolve=>{
-
-    const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
-
-    h.onResults(r=>{
-      if(r.poseLandmarks){
-        teacherPoses.push(r.poseLandmarks);
-      }
-    });
-
-    teacherVideo.onplay=()=>{
-      const c=document.createElement("canvas");
-      const cx=c.getContext("2d");
-
-      function loop(){
-        if(teacherVideo.paused){resolve();return;}
-        cx.drawImage(teacherVideo,0,0,320,240);
-        h.send({image:c});
-        requestAnimationFrame(loop);
-      }
-      loop();
-    };
-
-    teacherVideo.play();
-  });
-}
-
-// ================= START =================
-async function startTraining(){
-  await extractTeacher();
-  startCamera();
-}
-
-// ================= CAMERA =================
-function startCamera(){
-
-  navigator.mediaDevices.getUserMedia({video:true})
-  .then(stream=>{
-    video.srcObject=stream;
-  });
-
-  const h=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
-
-  h.onResults(onResults);
-
-  new Camera(video,{
-    onFrame: async()=>await h.send({image:video})
-  }).start();
-}
-
-// ================= MAIN =================
-function onResults(r){
-
-  ctx.drawImage(r.image,0,0,640,480);
-
-  if(!r.poseLandmarks) return;
-
-  let user = smooth(normalize(getFullPose(r)));
-
-  let frame = Math.floor(teacherVideo.currentTime * 30);
-  let teacher = normalize(teacherPoses[frame] || []);
-
-  if(!teacher.length) return;
-
-  let err = getError(user,teacher);
-  let score = 100 - err*100;
-
-  scores.push(score);
-
-  // draw skeleton
-  drawConnectors(ctx, r.poseLandmarks, POSE_CONNECTIONS);
-  drawLandmarks(ctx, r.poseLandmarks);
-
-  accuracy.innerText = score.toFixed(1);
-  error.innerText = err.toFixed(3);
-  feedbackText.innerText = score>80?"Good":"Improve";
-
-  updateChart(score);
-}
-
-// ================= CHART =================
+let scores = [];
 let chart;
 
+// ================= CHART =================
 function initChart(){
   chart = new Chart(document.getElementById("chart"),{
     type:"line",
-    data:{labels:[],datasets:[{data:[]}]}
+    data:{
+      labels:[],
+      datasets:[{
+        label:"Performance",
+        data:[],
+        borderWidth:2
+      }]
+    }
   });
 }
 
@@ -199,25 +78,174 @@ function updateChart(score){
   chart.update();
 }
 
-// ================= SAVE =================
-function finishSession(){
-  let final = scores[scores.length-1];
+// ================= FULL 543 POINTS =================
+function getFullPose(r){
+  return [
+    ...(r.poseLandmarks || []),
+    ...(r.leftHandLandmarks || []),
+    ...(r.rightHandLandmarks || []),
+    ...(r.faceLandmarks || [])
+  ];
+}
 
-  db.collection("reports").add({
-    user: auth.currentUser.email,
-    score: final
+// ================= NORMALIZATION =================
+function normalize(p){
+
+  if(p.length < 33) return p;
+
+  let ls = p[11];
+  let rs = p[12];
+
+  let cx = (ls.x + rs.x)/2;
+  let cy = (ls.y + rs.y)/2;
+
+  let scale = Math.hypot(ls.x - rs.x, ls.y - rs.y);
+
+  return p.map(pt=>({
+    x:(pt.x - cx)/scale,
+    y:(pt.y - cy)/scale,
+    v:pt.visibility || 1
+  }));
+}
+
+// ================= WEIGHT =================
+function getWeight(i){
+  if(i < 33) return 3;     // body
+  if(i < 75) return 2;     // hands
+  return 0.3;              // face
+}
+
+// ================= ERROR =================
+function weightedError(a,b){
+
+  let total = 0;
+  let wsum = 0;
+
+  for(let i=0;i<Math.min(a.length,b.length);i++){
+
+    if(a[i].v < 0.5) continue;
+
+    let dx = a[i].x - b[i].x;
+    let dy = a[i].y - b[i].y;
+
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    let w = getWeight(i);
+
+    total += dist * w;
+    wsum += w;
+  }
+
+  return total / (wsum || 1);
+}
+
+// ================= VIDEO UPLOAD =================
+document.getElementById("uploadVideo").onchange = e=>{
+  teacherVideo.src = URL.createObjectURL(e.target.files[0]);
+};
+
+// ================= START TRAINING =================
+document.getElementById("startBtn").onclick = ()=>{
+
+  const holistic = new Holistic({
+    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
   });
+
+  holistic.onResults(onResults);
+
+  new Camera(video,{
+    onFrame: async ()=>await holistic.send({image:video})
+  }).start();
+};
+
+// ================= MAIN AI =================
+function onResults(r){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(r.image,0,0,canvas.width,canvas.height);
+
+  if(!r.poseLandmarks) return;
+
+  let user = normalize(getFullPose(r));
+
+  // (demo version → self compare fallback)
+  let teacher = user;
+
+  let err = weightedError(user, teacher);
+
+  let score = Math.max(0, 100 - err * 150);
+
+  scores.push(score);
+
+  scoreText.innerText = score.toFixed(1);
+
+  feedbackText.innerText =
+    score > 85 ? "🔥 Perfect" :
+    score > 70 ? "👍 Good" :
+    "⚠ Improve";
+
+  updateChart(score);
+
+  // ================= RED/GREEN JOINTS =================
+  r.poseLandmarks.forEach((pt,i)=>{
+
+    let color = score > 80 ? "lime" : "red";
+
+    drawLandmarks(ctx,[pt],{
+      color:color,
+      radius:5
+    });
+
+  });
+
+  drawConnectors(ctx, r.poseLandmarks, POSE_CONNECTIONS);
+}
+
+// ================= SAVE REPORT =================
+document.getElementById("finishBtn").onclick = async ()=>{
+
+  let final = scores[scores.length-1] || 0;
+
+  await db.collection("leaderboard").add({
+    user: auth.currentUser.email,
+    score: final,
+    time: new Date()
+  });
+
+  alert("Saved!");
+  loadLeaderboard();
+};
+
+// ================= LEADERBOARD =================
+async function loadLeaderboard(){
+
+  let snap = await db.collection("leaderboard")
+    .orderBy("score","desc")
+    .limit(5)
+    .get();
+
+  let html = "";
+
+  snap.forEach(doc=>{
+    let d = doc.data();
+    html += `<p>${d.user} - ${d.score.toFixed(1)}</p>`;
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
 }
 
 // ================= PDF =================
-function downloadPDF(){
+document.getElementById("pdfBtn").onclick = ()=>{
+
   const { jsPDF } = window.jspdf;
+
   let doc = new jsPDF();
 
   let final = scores[scores.length-1] || 0;
 
   doc.text("AI Dance Report",20,20);
-  doc.text("Score: "+final.toFixed(2),20,40);
+  doc.text("Score: " + final.toFixed(2),20,40);
 
   doc.save("report.pdf");
-}
+};
+
+});
