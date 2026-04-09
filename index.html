@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>AI Dance Coach PRO</title>
+  <title>AI Dance Coach PRO</title>
 
-<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <!-- Firebase + App -->
+  <script type="module" src="script.js"></script>
 
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+  <!-- MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
-<!-- Chart -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 
@@ -28,50 +22,45 @@
 <h1>💎 AI Dance Coach PRO</h1>
 
 <!-- LOGIN -->
-<div id="loginBox" class="card">
-  <h2>Welcome Back</h2>
-
+<div id="loginBox">
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-
   <button id="loginBtn">Login</button>
-  <button id="googleBtn">Sign in with Google</button>
+  <button id="googleBtn">Google</button>
 </div>
 
 <!-- APP -->
 <div id="app" style="display:none;">
 
-<div class="controls">
-<input type="file" id="uploadVideo" accept="video/*">
-<button id="startBtn">Start</button>
-<button id="finishBtn">Finish</button>
-<button id="pdfBtn">Download PDF</button>
-</div>
+  <input type="file" id="videoUpload" accept="video/*">
 
-<div class="grid">
-  <div>
-    <h3>Teacher</h3>
-    <video id="teacherVideo" controls></video>
+  <div class="buttons">
+    <button id="startBtn">Start</button>
+    <button id="stopBtn">Finish</button>
+    <button id="downloadBtn">Download Report</button>
   </div>
 
-  <div>
-    <h3>You</h3>
-    <video class="input_video" autoplay muted playsinline></video>
-    <canvas id="canvas"></canvas>
+  <div class="video-container">
+    <div>
+      <h3>Teacher</h3>
+      <video id="teacherVideo" controls></video>
+    </div>
+
+    <div>
+      <h3>You</h3>
+      <video id="webcam" autoplay></video>
+      <canvas id="canvas"></canvas>
+    </div>
   </div>
-</div>
 
-<h2>Score: <span id="score">0</span></h2>
-<h3 id="feedback"></h3>
+  <h2 id="scoreText">Score: 0</h2>
 
-<canvas id="chart"></canvas>
+  <canvas id="chart"></canvas>
 
-<h2>🏆 Leaderboard</h2>
-<div id="leaderboard"></div>
+  <h3>🏆 Leaderboard</h3>
+  <div id="leaderboard"></div>
 
 </div>
-
-<script src="script.js"></script>
 
 </body>
 </html>
