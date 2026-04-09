@@ -3,140 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Dance Coach PRO | Next-Gen Training</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>AI Dance Coach PRO</title>
+    <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <style>
-        :root {
-            --primary: #6366f1;
-            --success: #22c55e;
-            --bg: #0f172a;
-        }
-
-        body {
-            background: var(--bg);
-            color: white;
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            overflow-x: hidden;
-        }
-
-        /* Glassmorphism Header */
-        header {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 20px;
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .video-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-            position: relative;
-        }
-
-        video, canvas {
-            width: 100%;
-            border-radius: 12px;
-            background: #000;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            padding: 0 20px 20px;
-        }
-
-        .stat-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 15px;
-            text-align: center;
-        }
-
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover { opacity: 0.8; transform: translateY(-2px); }
-
-        #login-btn { background: #fff; color: #000; }
-
-        .feedback-pulse {
-            font-size: 1.5rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-top: 10px;
-        }
-    </style>
 </head>
 <body>
 
-<header>
-    <h2 style="margin:0">💎 DANCE<span style="color:var(--primary)">COACH</span> PRO</h2>
-    <div id="auth-section">
-        <button id="login-btn">Sign in with Google</button>
-    </div>
-</header>
-
-<div class="container">
-    <div class="video-card">
-        <h3>Teacher Guide</h3>
-        <input type="file" id="uploadVideo" accept="video/*" style="margin-bottom:10px">
-        <video id="teacherVideo" crossorigin="anonymous"></video>
-    </div>
-
-    <div class="video-card">
-        <h3>Live Training</h3>
-        <canvas id="output_canvas"></canvas>
-        <video id="input_video" style="display:none"></video>
+<div id="login-screen" class="overlay">
+    <div class="glass-card">
+        <h1>💎 AI DANCE COACH <span class="pro-tag">PRO</span></h1>
+        <p>Master your moves with real-time CV analysis.</p>
+        <button id="login-btn" class="main-btn">Sign in with Google</button>
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-item">
-        <small>Accuracy</small>
-        <div id="accuracy-val" style="font-size: 1.5rem; font-weight:bold">0%</div>
+<div class="app-container" style="display:none;" id="main-app">
+    <header>
+        <div class="logo">AI DANCE COACH <span class="pro-tag">PRO</span></div>
+        <div id="user-info"></div>
+    </header>
+
+    <div class="workspace">
+        <div class="video-card">
+            <div class="card-header">TEACHER GUIDE</div>
+            <input type="file" id="uploadVideo" accept="video/*">
+            <video id="teacherVideo" crossorigin="anonymous"></video>
+        </div>
+
+        <div class="video-card">
+            <div class="card-header">LIVE TRAINING</div>
+            <canvas id="output_canvas" width="640" height="480"></canvas>
+            <video id="input_video" style="display:none"></video>
+        </div>
     </div>
-    <div class="stat-item">
-        <small>Feedback</small>
-        <div id="feedback-text" class="feedback-pulse">Ready</div>
-    </div>
-    <div class="stat-item">
-        <small>Status</small>
-        <button onclick="startSession()">🚀 Sync & Start</button>
-    </div>
-    <div class="stat-item">
-        <small>Report</small>
-        <button onclick="generatePDF()" style="background:var(--success)">📥 Download</button>
+
+    <div class="dashboard-footer">
+        <div class="metric">
+            <span>ACCURACY</span>
+            <div id="accuracy-val">0%</div>
+        </div>
+        <div class="metric">
+            <span>FEEDBACK</span>
+            <div id="feedback-text">READY</div>
+        </div>
+        <div class="controls">
+            <button onclick="startSession()" class="action-btn">🚀 SYNC & START</button>
+            <button onclick="generatePDF()" class="action-btn download">📥 REPORT</button>
+        </div>
     </div>
 </div>
 
