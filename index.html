@@ -2,43 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Dance Coach PRO</title>
+    <title>AI Dance Coach PRO | Advanced</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 </head>
 <body>
 
-<div class="overlay" id="login-overlay">
-    <div class="glass-card">
-        <h1>💎 AI DANCE COACH PRO</h1>
-        <button id="login-btn">Google Login</button>
+<div id="login-overlay" class="glass-overlay">
+    <div class="login-card">
+        <h1>💎 DANCE COACH <span class="pro">PRO</span></h1>
+        <button id="google-login">Login with Google</button>
     </div>
 </div>
 
-<div class="app-container" id="app-body" style="display:none;">
-    <div class="top-bar">
-        <input type="file" id="uploadVideo" accept="video/*">
-        <button onclick="startTraining()">🚀 SYNC & START</button>
-    </div>
+<div class="app-main" id="app-content" style="display:none">
+    <header>
+        <div class="logo">AI DANCE COACH PRO</div>
+        <div id="user-display"></div>
+    </header>
 
-    <div class="main-workspace">
-        <div class="card">
-            <h3>TEACHER</h3>
+    <div class="training-grid">
+        <div class="card teacher">
+            <h3>TEACHER GUIDE</h3>
+            <input type="file" id="uploadVideo" accept="video/*">
             <video id="teacherVideo" crossorigin="anonymous"></video>
         </div>
-        <div class="card">
-            <h3>YOU</h3>
+        <div class="card student">
+            <h3>LIVE TRAINING</h3>
             <canvas id="output_canvas" width="640" height="480"></canvas>
             <video id="input_video" style="display:none"></video>
         </div>
     </div>
 
-    <div class="dashboard">
+    <div class="pro-dashboard">
         <div class="stat">ACCURACY: <span id="accuracy">0%</span></div>
         <div class="stat">FEEDBACK: <span id="feedback">READY</span></div>
+        <button onclick="startTraining()" class="start-btn">🚀 START SYNC</button>
     </div>
 </div>
 
