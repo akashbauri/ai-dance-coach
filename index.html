@@ -13,54 +13,43 @@
 
 <div id="login-overlay" class="overlay">
     <div class="glass-card login-box">
-        <div class="logo-icon">💎</div>
-        <h1>AI DANCE COACH <span class="pro-tag">PRO</span></h1>
-        <p>Master your moves with real-time AI analysis</p>
-        <button id="google-login-btn" class="btn-google">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="G">
-            Sign in with Google
-        </button>
+        <h1>💎 AI DANCE COACH PRO</h1>
+        <p>Login to start your performance</p>
+        <button id="login-btn" onclick="handleLogin()" class="btn-primary">Sign in with Google</button>
     </div>
 </div>
 
 <div id="app-content" style="display:none;">
     <header class="app-header">
         <div class="brand">💎 AI DANCE COACH PRO</div>
-        <div id="user-display" class="user-tag"></div>
     </header>
 
-    <main class="workspace">
-        <div class="video-grid">
-            <div class="glass-card">
-                <div class="label">TEACHER GUIDE</div>
-                <input type="file" id="uploadVideo" accept="video/*" class="file-input">
-                <video id="teacherVideo" crossorigin="anonymous"></video>
-            </div>
-            <div class="glass-card">
-                <div class="label">LIVE PERFORMANCE</div>
-                <canvas id="output_canvas" width="640" height="480"></canvas>
-                <video id="input_video" style="display:none"></video>
-            </div>
+    <div class="video-container">
+        <div class="video-box">
+            <span>TEACHER GUIDE</span>
+            <input type="file" id="uploadVideo" accept="video/*">
+            <video id="teacherVideo"></video>
         </div>
-    </main>
+        <div class="video-box">
+            <span>YOUR PERFORMANCE</span>
+            <canvas id="output_canvas" width="640" height="480"></canvas>
+            <video id="input_video" style="display:none"></video>
+        </div>
+    </div>
 
-    <footer class="controls-shelf">
-        <div class="stats-group">
-            <div class="stat">
-                <span class="stat-label">ACCURACY</span>
-                <span id="accuracy-val">0%</span>
-                <div class="progress-bar"><div id="gauge-fill"></div></div>
-            </div>
-            <div id="feedback-note" class="feedback-msg">READY TO TRAIN</div>
+    <div class="controls">
+        <div class="stats">
+            ACCURACY: <span id="accuracy">0%</span>
+            <div class="bar"><div id="gauge-fill"></div></div>
         </div>
-        <div class="button-group">
-            <button id="trainBtn" class="btn-secondary" onclick="trainTeacher()">🧠 1. TRAIN AI</button>
-            <button id="startBtn" class="btn-primary" onclick="startDancing()" disabled>🚀 2. START SYNC</button>
-            <button class="btn-download" onclick="downloadReport()">📥 DOWNLOAD RESULT</button>
+        <div class="btns">
+            <button onclick="trainTeacher()" class="btn-secondary">🧠 1. TRAIN AI</button>
+            <button id="startBtn" onclick="startDancing()" class="btn-primary" disabled>🚀 2. START SYNC</button>
+            <button onclick="downloadReport()" class="btn-download">📥 DOWNLOAD RESULT</button>
         </div>
-    </footer>
+    </div>
 </div>
 
-<script type="module" src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
