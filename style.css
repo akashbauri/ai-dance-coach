@@ -1,50 +1,115 @@
+:root {
+    --primary: #6366f1;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --bg: #0b0e14;
+    --glass: rgba(255, 255, 255, 0.05);
+}
+
 body {
-  background: #0b0f1a;
-  color: white;
-  text-align: center;
-  font-family: Arial;
+    background: var(--bg);
+    color: white;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
 }
 
-.card {
-  background: #111827;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  margin: auto;
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, #1e293b, #0b0e14);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
-input {
-  padding: 10px;
-  margin: 5px;
-  width: 90%;
+.glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    padding: 40px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
 }
+
+.pro-tag {
+    background: var(--primary);
+    font-size: 0.5em;
+    padding: 2px 8px;
+    border-radius: 5px;
+    vertical-align: middle;
+}
+
+.workspace {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+.video-card {
+    background: var(--glass);
+    border-radius: 20px;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.card-header {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+video, canvas {
+    border-radius: 12px;
+    width: 640px;
+    height: 480px;
+    background: #000;
+}
+
+.dashboard-footer {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 30px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    padding: 20px 40px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.metric span { font-size: 0.7rem; color: #94a3b8; display: block; }
+#accuracy-val { font-size: 1.8rem; font-weight: 800; color: var(--success); }
+#feedback-text { font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
 
 button {
-  padding: 10px;
-  margin: 5px;
-  background: #22c55e;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
 }
 
-.grid {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
+.main-btn {
+    background: white;
+    color: black;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1rem;
 }
 
-.cam-box {
-  position: relative;
+.action-btn {
+    background: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
 }
 
-video {
-  width: 300px;
-}
-
-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
+.action-btn.download { background: #334155; }
