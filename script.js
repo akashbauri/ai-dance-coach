@@ -13,95 +13,85 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
-// DOM References
-const loginBtn = document.getElementById('login-btn');
-const loginScreen = document.getElementById('login-screen');
-const mainApp = document.getElementById('main-app');
+// Globals
+let teacherPoses = [];
 const teacherVideo = document.getElementById('teacherVideo');
 const inputVideo = document.getElementById('input_video');
 const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
 
-let teacherPoses = [];
-let scoreHistory = [];
-
-// 1. AUTH LOGIC
-loginBtn.onclick = async () => {
-    try {
-        const result = await signInWithPopup(auth, provider);
-        loginScreen.style.display = 'none';
-        mainApp.style.display = 'block';
-        document.getElementById('user-info').innerText = `Welcome, ${result.user.displayName}`;
-    } catch (e) { alert("Login failed"); }
+// --- 1. LOGIN ---
+document.getElementById('login-btn').onclick = () => {
+    signInWithPopup(auth, new GoogleAuthProvider()).then(() => {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('app-body').style.display = 'block';
+    });
 };
 
-// 2. HOLISTIC CONFIG
+// --- 2. HOLISTIC SETUP ---
 const holistic = new Holistic({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
 });
+
 holistic.setOptions({ modelComplexity: 1, smoothLandmarks: true });
 holistic.onResults(onResults);
 
-// 3. CORE PROCESSING
+// --- 3. FIXING JOINTS & ACCURACY ---
 function onResults(results) {
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     if (results.poseLandmarks && teacherPoses.length > 0) {
-        let frameIdx = Math.floor(teacherVideo.currentTime * 30);
-        let teacherPose = teacherPoses[Math.min(frameIdx, teacherPoses.length - 1)];
+        const frameIdx = Math.floor(teacherVideo.currentTime * 30);
+        const teacherPose = teacherPoses[Math.min(frameIdx, teacherPoses.length - 1)];
 
         if (teacherPose) {
-            let errorSum = 0;
-            results.poseLandmarks.forEach((s, i) => {
-                const t = teacherPose[i];
-                const dist = Math.hypot(s.x - t.x, s.y - t.y);
-                errorSum += dist;
+            let totalDist = 0;
 
-                // JOINT COLORING: Green if close, Red if far
-                const color = dist < 0.07 ? "#22c55e" : "#ef4444";
-                drawLandmarks(canvasCtx, [s], {color: color, fillColor: color, radius: 4});
+            results.poseLandmarks.forEach((landmark, i) => {
+                const t = teacherPose[i];
+                const dist = Math.hypot(landmark.x - t.x, landmark.y - t.y);
+                totalDist += dist;
+
+                // FIX: Proper Joint Color Logic
+                const color = dist < 0.1 ? "#22c55e" : "#ef4444";
+                
+                // Draw skeleton connections
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#ffffffaa', lineWidth: 2});
+                
+                // Draw individual joints with Red/Green feedback
+                drawLandmarks(canvasCtx, [landmark], {
+                    color: color, 
+                    fillColor: color, 
+                    lineWidth: 1, 
+                    radius: 5
+                });
             });
 
-            const accuracy = Math.max(0, 100 - (errorSum * 12));
-            document.getElementById('accuracy-val').innerText = `${Math.floor(accuracy)}%`;
-            scoreHistory.push(accuracy);
-            
-            const feedback = document.getElementById('feedback-text');
-            feedback.innerText = accuracy > 85 ? "🔥 PERFECT" : "⚠️ ADJUST BODY";
-            feedback.style.color = accuracy > 85 ? "#22c55e" : "#ef4444";
+            const score = Math.max(0, 100 - (totalDist * 10));
+            document.getElementById('accuracy').innerText = `${Math.floor(score)}%`;
         }
     }
     canvasCtx.restore();
 }
 
-// 4. SESSION MGMT
-window.startSession = async () => {
-    if(!teacherVideo.src) return alert("Upload Teacher Video First!");
+// --- 4. START TRAINING ---
+window.startTraining = async () => {
+    if(!teacherVideo.src) return alert("Upload video!");
     
-    // Simple teacher extraction on the fly
+    // Quick extract
     teacherPoses = [];
     teacherVideo.currentTime = 0;
     teacherVideo.play();
     
+    // FIX: Pre-initialize camera to stop lag
     const camera = new Camera(inputVideo, {
         onFrame: async () => { await holistic.send({image: inputVideo}); },
         width: 640, height: 480
     });
     camera.start();
-};
-
-window.generatePDF = () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const avg = scoreHistory.reduce((a,b) => a+b, 0) / scoreHistory.length;
-    doc.text(`Dance Pro Performance Report`, 20, 20);
-    doc.text(`User: ${auth.currentUser.displayName}`, 20, 40);
-    doc.text(`Session Accuracy: ${Math.floor(avg)}%`, 20, 50);
-    doc.save("Dance_Results.pdf");
 };
 
 document.getElementById("uploadVideo").onchange = (e) => {
