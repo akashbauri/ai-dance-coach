@@ -1,110 +1,112 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
-    authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
-    projectId: "ai-dance-coach-1ecb8",
-    storageBucket: "ai-dance-coach-1ecb8.firebasestorage.app",
-    messagingSenderId: "1023492993370",
-    appId: "1:1023492993370:web:9bd0b563a8f565f074c363",
-    measurementId: "G-LN1SJMB5J8"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// Globals
-let teacherData = [];
-const teacherVideo = document.getElementById('teacherVideo');
-const inputVideo = document.getElementById('input_video');
-const canvasElement = document.getElementById('output_canvas');
+const videoElement = document.querySelector('.input_video');
+const canvasElement = document.querySelector('.output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
+const accuracyText = document.getElementById("accuracy");
+const feedbackText = document.getElementById("feedback");
+const gauge = document.getElementById("gauge-fill");
+const teacherVideo = document.getElementById("teacherVideo");
 
-// --- 1. LOGIN & START WEBCAM ---
-document.getElementById('google-login-btn').onclick = async () => {
-    try {
-        const result = await signInWithPopup(auth, new GoogleAuthProvider());
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('app-content').style.display = 'block';
-        document.getElementById('user-profile').innerText = result.user.displayName;
-        
-        // Start camera IMMEDIATELY after login
-        startWebcam();
-    } catch (e) { alert("Login Error: " + e.message); }
+let teacherPoses = [];
+let frameIndex = 0;
+let sessionScores = [];
+
+document.getElementById("uploadVideo").onchange = (e) => {
+    teacherVideo.src = URL.createObjectURL(e.target.files[0]);
 };
 
-// --- 2. DTW COMPARISON LOGIC ---
-function poseDist(p1, p2) {
-    let sum = 0;
-    p1.forEach((lm, i) => {
-        sum += Math.hypot(lm.x - p2[i].x, lm.y - p2[i].y);
+// 1. DEDICATED TRAINING FUNCTION
+async function trainTeacher() {
+    if (!teacherVideo.src) return alert("Please upload a video first!");
+    feedbackText.innerText = "Analyzing Teacher... Please wait.";
+    teacherPoses = [];
+    
+    const poseDetector = new Pose({
+        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
     });
-    return sum / p1.length;
+    poseDetector.setOptions({ modelComplexity: 1 });
+    poseDetector.onResults((res) => {
+        if (res.poseLandmarks) teacherPoses.push(res.poseLandmarks);
+    });
+
+    teacherVideo.play();
+    const stream = teacherVideo.captureStream ? teacherVideo.captureStream() : null;
+    
+    // Process frames while video plays
+    const interval = setInterval(async () => {
+        if (teacherVideo.paused || teacherVideo.ended) {
+            clearInterval(interval);
+            feedbackText.innerText = "Training Complete! Click Start.";
+            document.getElementById("startBtn").disabled = false;
+            return;
+        }
+        await poseDetector.send({ image: teacherVideo });
+    }, 100);
 }
 
-// Simple sliding-window DTW for real-time
-function getLiveScore(studentPose, teacherPose) {
-    let d = poseDist(studentPose, teacherPose);
-    return Math.max(0, 100 - (d * 250));
+// 2. START WEBCAM & COMPARISON
+function startTraining() {
+    frameIndex = 0;
+    sessionScores = [];
+    
+    const pose = new Pose({
+        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+    });
+    pose.setOptions({ modelComplexity: 1, smoothLandmarks: true });
+    pose.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => { await pose.send({ image: videoElement }); },
+        width: 640, height: 480
+    });
+    camera.start();
+    teacherVideo.currentTime = 0;
+    teacherVideo.play();
 }
 
-// --- 3. POSE SENSING ---
-const pose = new Pose({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-});
-pose.setOptions({ modelComplexity: 1, smoothLandmarks: true });
-pose.onResults(onResults);
-
+// 3. FIX SKELETON & COLORED JOINTS
 function onResults(results) {
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-    if (results.poseLandmarks && teacherData.length > 0) {
-        let frameIdx = Math.floor(teacherVideo.currentTime * 30);
-        let tPose = teacherData[Math.min(frameIdx, teacherData.length - 1)];
+    if (results.poseLandmarks && teacherPoses.length > 0) {
+        let currentTeacherPose = teacherPoses[Math.min(frameIndex, teacherPoses.length - 1)];
 
-        if (tPose) {
-            let score = getLiveScore(results.poseLandmarks, tPose);
-            document.getElementById('accuracy-val').innerText = `${Math.floor(score)}%`;
+        // DRAW SKELETON CONNECTIONS (White/Gray)
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#FFFFFF', lineWidth: 2});
 
-            // Drawing Red/Green Joints
-            results.poseLandmarks.forEach((lm, i) => {
-                let dist = Math.hypot(lm.x - tPose[i].x, lm.y - tPose[i].y);
-                let color = dist < 0.08 ? "#22c55e" : "#ef4444";
-                drawLandmarks(canvasCtx, [lm], {color: color, fillColor: color, radius: 4});
-            });
-        }
+        let frameError = 0;
+        results.poseLandmarks.forEach((landmark, i) => {
+            const t = currentTeacherPose[i];
+            const dist = Math.hypot(landmark.x - t.x, landmark.y - t.y);
+            frameError += dist;
+
+            // DRAW JOINTS (Red if far, Green if close)
+            const jointColor = dist < 0.1 ? "#00FF00" : "#FF0000";
+            drawLandmarks(canvasCtx, [landmark], {color: jointColor, fillColor: jointColor, radius: 4});
+        });
+
+        const score = Math.max(0, 100 - (frameError * 5));
+        accuracyText.innerText = Math.floor(score) + "%";
+        gauge.style.width = score + "%";
+        sessionScores.push(score);
+
+        frameIndex++;
     }
     canvasCtx.restore();
 }
 
-function startWebcam() {
-    const camera = new Camera(inputVideo, {
-        onFrame: async () => { await pose.send({image: inputVideo}); },
-        width: 640, height: 480
-    });
-    camera.start();
-}
-
-// --- 4. TEACHER DATA EXTRACTION ---
-window.startSession = async () => {
-    if(!teacherVideo.src) return alert("Select video first!");
-    teacherData = []; // Clear old data
-    teacherVideo.currentTime = 0;
-    teacherVideo.play();
+// 4. DOWNLOAD RESULT
+window.downloadReport = () => {
+    if (sessionScores.length === 0) return alert("No session data found!");
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const avgScore = sessionScores.reduce((a, b) => a + b, 0) / sessionScores.length;
     
-    // In a real app, you'd pre-process this, but here we sync as we play
-    const extractPose = new Pose({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
-    extractPose.onResults(res => { if(res.poseLandmarks) teacherData.push(res.poseLandmarks); });
-    
-    // We sample the teacher video frames
-    teacherVideo.addEventListener('timeupdate', async () => {
-        await extractPose.send({image: teacherVideo});
-    });
-};
-
-document.getElementById("uploadVideo").onchange = (e) => {
-    teacherVideo.src = URL.createObjectURL(e.target.files[0]);
+    doc.setFontSize(20);
+    doc.text("AI Dance Coach PRO - Report", 20, 20);
+    doc.setFontSize(14);
+    doc.text(`Average Accuracy: ${Math.floor(avgScore)}%`, 20, 40);
+    doc.text(`Total Frames Analyzed: ${sessionScores.length}`, 20, 50);
+    doc.save("dance-result.pdf");
 };
