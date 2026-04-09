@@ -1,59 +1,123 @@
+:root {
+    --primary: #6366f1;
+    --success: #22c55e;
+    --glass: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.1);
+}
+
 body {
+    margin: 0;
     background: #0f172a;
     color: white;
-    font-family: sans-serif;
-    margin: 0;
+    font-family: 'Inter', sans-serif;
     overflow: hidden;
 }
 
+/* Login Screen Styles */
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: radial-gradient(circle at center, #1e293b, #0b0e14);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    z-index: 1000;
 }
 
-.glass-card {
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    padding: 50px;
-    border-radius: 20px;
+.glass-login-card {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 40px;
+    border-radius: 24px;
+    width: 380px;
     text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
 }
 
-.main-workspace {
+.social-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: white;
+    color: #374151;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.login-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
+
+.login-submit {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* App Styles */
+.app-header {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    background: var(--glass);
+    border-bottom: 1px solid var(--border);
+}
+
+.workspace {
     display: flex;
     justify-content: center;
     gap: 20px;
-    padding: 20px;
+    padding: 40px;
 }
 
 .card {
-    background: rgba(255,255,255,0.05);
-    border-radius: 15px;
-    padding: 10px;
-    width: 640px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 15px;
 }
 
 video, canvas {
     width: 640px;
     height: 480px;
-    border-radius: 10px;
-    background: #000;
+    border-radius: 12px;
+    background: black;
+    object-fit: cover;
 }
 
-.dashboard {
+.action-footer {
     position: fixed;
-    bottom: 20px;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
+    background: var(--glass);
+    backdrop-filter: blur(15px);
+    padding: 20px 60px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
     display: flex;
-    gap: 50px;
-    background: rgba(255,255,255,0.1);
-    padding: 20px 50px;
-    border-radius: 50px;
-    font-weight: bold;
+    gap: 60px;
+    align-items: center;
 }
+
+#accuracy-val { font-size: 2rem; font-weight: 800; color: var(--success); }
+.primary-btn { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; }
