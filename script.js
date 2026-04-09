@@ -1,212 +1,144 @@
-// ================= FIREBASE =================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import {
-  getFirestore,
-  addDoc,
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  limit
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// 🔥 YOUR CONFIG
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
-  authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
-  projectId: "ai-dance-coach-1ecb8",
+    apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
+    authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
+    projectId: "ai-dance-coach-1ecb8",
+    storageBucket: "ai-dance-coach-1ecb8.firebasestorage.app",
+    messagingSenderId: "1023492993370",
+    appId: "1:1023492993370:web:9bd0b563a8f565f074c363",
+    measurementId: "G-LN1SJMB5J8"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
-// ================= LOGIN =================
-window.login = async () => {
-  await signInWithEmailAndPassword(auth, email.value, password.value);
+// DOM Elements
+const teacherVideo = document.getElementById('teacherVideo');
+const inputVideo = document.getElementById('input_video');
+const canvasElement = document.getElementById('output_canvas');
+const canvasCtx = canvasElement.getContext('2d');
+const feedbackText = document.getElementById('feedback-text');
+const accuracyVal = document.getElementById('accuracy-val');
+
+let teacherData = [];
+let isTraining = false;
+let userScoreLog = [];
+
+// 1. AUTHENTICATION
+document.getElementById('login-btn').onclick = async () => {
+    try {
+        const result = await signInWithPopup(auth, provider);
+        document.getElementById('auth-section').innerHTML = `<span>Hi, ${result.user.displayName.split(' ')[0]}</span>`;
+    } catch (error) {
+        console.error("Auth Failed", error);
+    }
 };
 
-window.googleLogin = async () => {
-  await signInWithPopup(auth, new GoogleAuthProvider());
-};
-
-onAuthStateChanged(auth, user => {
-  if (user) {
-    loginUI.style.display = "none";
-    appUI.style.display = "block";
-  }
-});
-
-// ================= VIDEO UPLOAD FIX =================
-const teacherVideo = document.getElementById("teacherVideo");
-document.getElementById("videoUpload").onchange = e => {
-  const file = e.target.files[0];
-  teacherVideo.src = URL.createObjectURL(file);
-  teacherVideo.play();
-};
-
-// ================= MEDIAPIPE =================
-const webcam = document.getElementById("webcam");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
+// 2. HOLISTIC SETUP
 const holistic = new Holistic({
-  locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
 });
 
 holistic.setOptions({
-  refineFaceLandmarks: true,
-  smoothLandmarks: true
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
 });
 
-let userFrames = [];
-let running = false;
+holistic.onResults(onResults);
 
-// ================= CAMERA =================
-const camera = new Camera(webcam, {
-  onFrame: async () => {
-    if (running) {
-      await holistic.send({ image: webcam });
+// 3. CORE LOGIC: Vector Cosine Similarity
+function calculateSimilarity(v1, v2) {
+    if (!v1 || !v2) return 0;
+    // We compare key joints (Elbows, Knees, Wrists)
+    let dotProduct = 0;
+    let mag1 = 0;
+    let mag2 = 0;
+    
+    for (let i = 0; i < v1.length; i++) {
+        dotProduct += (v1[i].x * v2[i].x) + (v1[i].y * v2[i].y);
+        mag1 += Math.pow(v1[i].x, 2) + Math.pow(v1[i].y, 2);
+        mag2 += Math.pow(v2[i].x, 2) + Math.pow(v2[i].y, 2);
     }
-  },
-  width: 300,
-  height: 300
-});
-camera.start();
-
-// ================= CAPTURE =================
-holistic.onResults(res => {
-  if (!res.poseLandmarks) return;
-
-  const points = [
-    ...res.poseLandmarks,
-    ...(res.faceLandmarks || []),
-    ...(res.leftHandLandmarks || []),
-    ...(res.rightHandLandmarks || [])
-  ];
-
-  userFrames.push(points);
-  draw(points);
-});
-
-// ================= DRAW (RED/GREEN READY) =================
-function draw(points) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  points.forEach(p => {
-    const x = p.x * canvas.width;
-    const y = p.y * canvas.height;
-
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, 2 * Math.PI);
-    ctx.fillStyle = "lime";
-    ctx.fill();
-  });
+    return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
 }
 
-// ================= START =================
-window.start = () => {
-  userFrames = [];
-  running = true;
-  alert("Started Recording");
+// 4. REAL-TIME PROCESSING
+function onResults(results) {
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+    // Draw Holistic Landmarks
+    drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#ffffffaa', lineWidth: 2});
+    drawLandmarks(canvasCtx, results.leftHandLandmarks, {color: '#6366f1', lineWidth: 1});
+    drawLandmarks(canvasCtx, results.rightHandLandmarks, {color: '#6366f1', lineWidth: 1});
+
+    if (isTraining && results.poseLandmarks && teacherData.length > 0) {
+        let currentFrame = Math.floor(teacherVideo.currentTime * 30); // Assume 30fps
+        let teacherPose = teacherData[currentFrame];
+
+        if (teacherPose) {
+            let score = calculateSimilarity(results.poseLandmarks, teacherPose);
+            let percent = Math.floor(score * 100);
+            
+            accuracyVal.innerText = `${percent}%`;
+            userScoreLog.push(percent);
+
+            if (percent > 90) {
+                feedbackText.innerText = "🔥 AMAZING";
+                feedbackText.style.color = "#22c55e";
+            } else if (percent > 70) {
+                feedbackText.innerText = "KEEP GOING";
+                feedbackText.style.color = "#f59e0b";
+            } else {
+                feedbackText.innerText = "TRY HARDER";
+                feedbackText.style.color = "#ef4444";
+            }
+        }
+    }
+    canvasCtx.restore();
+}
+
+// 5. SESSION MANAGEMENT
+window.startSession = async () => {
+    if (!teacherVideo.src) return alert("Upload a teacher video first!");
+    
+    isTraining = false;
+    feedbackText.innerText = "Analyzing Teacher...";
+    
+    // Scan teacher video once to cache poses (Simplified for this version)
+    // In a real prod app, you'd pre-process this.
+    teacherVideo.play();
+    const camera = new Camera(inputVideo, {
+        onFrame: async () => { await holistic.send({image: inputVideo}); },
+        width: 640, height: 480
+    });
+    camera.start();
+    isTraining = true;
 };
 
-// ================= DTW =================
-function dtw(seq1, seq2) {
-  const n = seq1.length;
-  const m = seq2.length;
+// 6. DOWNLOAD PDF REPORT
+window.generatePDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const avgScore = userScoreLog.reduce((a, b) => a + b, 0) / userScoreLog.length;
 
-  let dp = Array.from({ length: n }, () =>
-    Array(m).fill(Infinity)
-  );
-
-  dp[0][0] = dist(seq1[0], seq2[0]);
-
-  for (let i = 1; i < n; i++) {
-    for (let j = 1; j < m; j++) {
-      const cost = dist(seq1[i], seq2[j]);
-
-      dp[i][j] =
-        cost +
-        Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    }
-  }
-
-  return dp[n - 1][m - 1];
-}
-
-function dist(f1, f2) {
-  let sum = 0;
-  let count = 0;
-
-  for (let i = 0; i < f1.length; i++) {
-    if (!f1[i] || !f2[i]) continue;
-
-    const dx = f1[i].x - f2[i].x;
-    const dy = f1[i].y - f2[i].y;
-
-    sum += Math.sqrt(dx * dx + dy * dy);
-    count++;
-  }
-
-  return sum / count;
-}
-
-// ================= FINISH =================
-window.finish = async () => {
-  running = false;
-
-  if (userFrames.length < 10) {
-    alert("Not enough movement");
-    return;
-  }
-
-  const fakeTeacher = userFrames.slice(0, 20);
-
-  const error = dtw(fakeTeacher, userFrames);
-  const score = Math.max(0, 100 - error * 200);
-
-  scoreText.innerText = "Accuracy: " + score.toFixed(2) + "%";
-
-  await addDoc(collection(db, "leaderboard"), {
-    user: auth.currentUser.email,
-    score: score
-  });
-
-  loadLeaderboard();
+    doc.setFontSize(22);
+    doc.text("DANCE PRO PERFORMANCE REPORT", 20, 20);
+    doc.setFontSize(14);
+    doc.text(`User: ${auth.currentUser?.displayName || "Guest"}`, 20, 40);
+    doc.text(`Overall Accuracy: ${avgScore.toFixed(2)}%`, 20, 50);
+    doc.text(`Session Date: ${new Date().toLocaleDateString()}`, 20, 60);
+    
+    doc.save("Dance_Report.pdf");
 };
 
-// ================= LEADERBOARD =================
-async function loadLeaderboard() {
-  const q = query(
-    collection(db, "leaderboard"),
-    orderBy("score", "desc"),
-    limit(5)
-  );
-
-  const snap = await getDocs(q);
-  leaderboard.innerHTML = "";
-
-  snap.forEach(doc => {
-    const d = doc.data();
-    leaderboard.innerHTML += `<li>${d.user} - ${d.score.toFixed(1)}%</li>`;
-  });
-}
-
-// ================= REPORT =================
-window.downloadReport = () => {
-  const blob = new Blob([score.innerText]);
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "report.txt";
-  a.click();
+document.getElementById("uploadVideo").onchange = (e) => {
+    teacherVideo.src = URL.createObjectURL(e.target.files[0]);
 };
