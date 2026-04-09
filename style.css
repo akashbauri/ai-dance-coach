@@ -1,16 +1,35 @@
 body{
-background:#020617;
+background:linear-gradient(135deg,#020617,#0f172a);
 color:white;
+font-family:sans-serif;
 text-align:center;
-font-family:Segoe UI;
+}
+
+.card{
+background:rgba(255,255,255,0.05);
+padding:30px;
+border-radius:15px;
+width:300px;
+margin:auto;
+backdrop-filter:blur(10px);
+}
+
+input{
+display:block;
+margin:10px auto;
+padding:10px;
+width:90%;
+border-radius:8px;
+border:none;
 }
 
 button{
-padding:10px;
+padding:10px 20px;
 margin:10px;
-background:#22c55e;
 border:none;
-border-radius:8px;
+border-radius:10px;
+background:#22c55e;
+color:white;
 cursor:pointer;
 transition:0.3s;
 }
@@ -20,6 +39,14 @@ transform:scale(1.1);
 background:#16a34a;
 }
 
-canvas{
-width:400px;
+.grid{
+display:flex;
+justify-content:center;
+gap:30px;
+margin-top:20px;
+}
+
+video, canvas{
+width:300px;
+border-radius:10px;
 }
