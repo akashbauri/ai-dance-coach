@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>AI Dance Coach PRO</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
@@ -9,39 +10,57 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <h1>💎 AI Dance Coach PRO</h1>
 
-    <div class="top-bar">
-        <input type="file" id="uploadVideo" accept="video/*">
-        <button id="trainBtn" onclick="trainTeacher()">🧠 1. Train Teacher</button>
-        <button id="startBtn" onclick="startTraining()" disabled>🚀 2. Start Dancing</button>
-        <button onclick="downloadReport()">📥 Download Result</button>
+<div id="login-overlay" class="overlay">
+    <div class="glass-card login-box">
+        <div class="logo-icon">💎</div>
+        <h1>AI DANCE COACH <span class="pro-tag">PRO</span></h1>
+        <p>Master your moves with real-time AI analysis</p>
+        <button id="google-login-btn" class="btn-google">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="G">
+            Sign in with Google
+        </button>
     </div>
+</div>
 
-    <div class="container">
-        <div class="card">
-            <h2>Teacher Video</h2>
-            <video id="teacherVideo" width="640" height="480" muted></video>
-        </div>
-        <div class="card">
-            <h2>Live Training</h2>
-            <canvas class="output_canvas" width="640" height="480"></canvas>
-            <video class="input_video" style="display:none"></video>
-        </div>
-    </div>
+<div id="app-content" style="display:none;">
+    <header class="app-header">
+        <div class="brand">💎 AI DANCE COACH PRO</div>
+        <div id="user-display" class="user-tag"></div>
+    </header>
 
-    <div class="dashboard">
-        <div class="metric">
-            <h3>Accuracy</h3>
-            <div class="gauge"><div id="gauge-fill"></div></div>
-            <div id="accuracy">0%</div>
+    <main class="workspace">
+        <div class="video-grid">
+            <div class="glass-card">
+                <div class="label">TEACHER GUIDE</div>
+                <input type="file" id="uploadVideo" accept="video/*" class="file-input">
+                <video id="teacherVideo" crossorigin="anonymous"></video>
+            </div>
+            <div class="glass-card">
+                <div class="label">LIVE PERFORMANCE</div>
+                <canvas id="output_canvas" width="640" height="480"></canvas>
+                <video id="input_video" style="display:none"></video>
+            </div>
         </div>
-        <div class="metric">
-            <h3>Feedback</h3>
-            <div id="feedback">Upload & Train first</div>
-        </div>
-    </div>
+    </main>
 
-    <script src="script.js"></script>
+    <footer class="controls-shelf">
+        <div class="stats-group">
+            <div class="stat">
+                <span class="stat-label">ACCURACY</span>
+                <span id="accuracy-val">0%</span>
+                <div class="progress-bar"><div id="gauge-fill"></div></div>
+            </div>
+            <div id="feedback-note" class="feedback-msg">READY TO TRAIN</div>
+        </div>
+        <div class="button-group">
+            <button id="trainBtn" class="btn-secondary" onclick="trainTeacher()">🧠 1. TRAIN AI</button>
+            <button id="startBtn" class="btn-primary" onclick="startDancing()" disabled>🚀 2. START SYNC</button>
+            <button class="btn-download" onclick="downloadReport()">📥 DOWNLOAD RESULT</button>
+        </div>
+    </footer>
+</div>
+
+<script type="module" src="script.js"></script>
 </body>
 </html>
