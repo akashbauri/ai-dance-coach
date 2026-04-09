@@ -12,42 +12,38 @@
 <body>
 
 <div id="login-overlay" class="overlay">
-    <div class="glass-card login-box">
+    <div class="login-card">
         <h1>💎 AI DANCE COACH PRO</h1>
-        <p>Login to activate your AI and Camera</p>
-        <button id="signin-btn" class="btn-primary">Sign in with Google</button>
+        <button id="signin-btn">Sign in with Google</button>
     </div>
 </div>
 
 <div id="app-content" style="display:none;">
-    <header class="app-header">
-        <div class="brand">💎 AI DANCE COACH PRO</div>
-        <div id="user-info"></div>
-    </header>
+    <div class="top-bar">
+        <input type="file" id="uploadVideo" accept="video/*">
+        <button onclick="trainTeacher()">🚀 1. Train AI</button>
+        <button id="startBtn" onclick="startDancing()" disabled>🔥 2. Start Sync</button>
+        <button onclick="downloadReport()">📥 Download Result</button>
+    </div>
 
-    <div class="video-grid">
-        <div class="glass-card">
-            <h3>TEACHER GUIDE</h3>
-            <input type="file" id="uploadVideo" accept="video/*">
+    <div class="container">
+        <div class="card">
+            <h2>Teacher Guide</h2>
             <video id="teacherVideo" width="640" height="480"></video>
         </div>
-        <div class="glass-card">
-            <h3>YOUR PERFORMANCE</h3>
-            <canvas id="output_canvas" width="640" height="480"></canvas>
-            <video id="input_video" style="display:none"></video>
+        <div class="card">
+            <h2>Your Performance</h2>
+            <canvas class="output_canvas" width="640" height="480"></canvas>
+            <video class="input_video" style="display:none"></video>
         </div>
     </div>
 
-    <div class="controls-bar">
-        <div class="stats">
-            ACCURACY: <span id="accuracy">0%</span>
-            <div class="gauge-bg"><div id="gauge-fill"></div></div>
+    <div class="dashboard">
+        <div class="metric">
+            <h3>Accuracy: <span id="accuracy">0%</span></h3>
+            <div class="gauge"><div id="gauge-fill"></div></div>
         </div>
-        <div class="btns">
-            <button onclick="trainTeacher()" class="btn-secondary">🧠 1. TRAIN AI</button>
-            <button id="startBtn" onclick="startDancing()" class="btn-primary" disabled>🚀 2. START SYNC</button>
-            <button onclick="downloadReport()" class="btn-download">📥 DOWNLOAD RESULT</button>
-        </div>
+        <div class="metric"><h3>Feedback: <span id="feedback">Ready</span></h3></div>
     </div>
 </div>
 
