@@ -46,25 +46,63 @@ function startDancing() {
     teacherVideo.play();
 }
 
+// 🎯 UPDATED REAL-TIME COMPARISON WITH SKELETON
 function onResults(results) {
+    // Clear the canvas and draw the new webcam frame
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     if (results.poseLandmarks && teacherPoses.length > 0) {
-        const frameIdx = Math.floor(teacherVideo.currentTime * 30);
-        const tPose = teacherPoses[Math.min(frameIdx, teacherPoses.length - 1)];
+        let student = normalizePose(results.poseLandmarks);
+        let teacher = normalizePose(teacherPoses[Math.min(frameIndex, teacherPoses.length - 1)]);
 
-        if(tPose) {
-            drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#FFFFFF', lineWidth: 2});
-            results.poseLandmarks.forEach((lm, i) => {
-                const dist = Math.hypot(lm.x - tPose[i].x, lm.y - tPose[i].y);
-                const color = dist < 0.12 ? "#22c55e" : "#ef4444";
-                drawLandmarks(canvasCtx, [lm], {color: color, fillColor: color, radius: 4});
+        // 1. DRAW THE SKELETON (White lines connecting joints)
+        // This uses the POSE_CONNECTIONS map from MediaPipe to draw the body structure
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
+            color: '#FFFFFF', 
+            lineWidth: 2
+        });
+
+        // 2. DRAW COLORED JOINTS (Feedback dots)
+        for (let i = 0; i < results.poseLandmarks.length; i++) {
+            let dx = student[i].x - teacher[i].x;
+            let dy = student[i].y - teacher[i].y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Change dot color based on accuracy distance
+            let color = dist > 0.1 ? "red" : "green";
+
+            drawLandmarks(canvasCtx, [results.poseLandmarks[i]], {
+                color: color,
+                fillColor: color,
+                lineWidth: 2,
+                radius: 4 // Slightly larger for better visibility
             });
         }
+
+        // 3. UPDATE METRICS
+        let error = poseDistance(student, teacher);
+        let score = Math.max(0, 100 - error * 200);
+
+        accuracyText.innerText = score.toFixed(1) + "%";
+        errorText.innerText = error.toFixed(4);
+        gauge.style.width = score + "%";
+
+        feedbackText.innerText =
+            score > 90 ? "🔥 Perfect" :
+            score > 75 ? "👍 Good" :
+            score > 60 ? "⚠ Adjust arms" :
+            "❌ Incorrect pose";
+
+        frameIndex++;
+
+        // 4. LATENCY TRACKING
+        let latency = performance.now() - startTime;
+        latencyText.innerText = latency.toFixed(0) + " ms";
     }
     canvasCtx.restore();
+}
 }
 
 document.getElementById("uploadVideo").onchange = (e) => {
