@@ -5,15 +5,15 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
-
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<!-- MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 
 <!-- Chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -27,31 +27,46 @@
 
 <h1>💎 AI Dance Coach PRO</h1>
 
-<div id="loginBox">
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
+<!-- LOGIN -->
+<div id="loginBox" class="card">
+  <h2>Welcome Back</h2>
 
-<button onclick="login()">Login</button>
-<button onclick="googleLogin()">Google</button>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+
+  <button id="loginBtn">Login</button>
+  <button id="googleBtn">Sign in with Google</button>
 </div>
 
+<!-- APP -->
 <div id="app" style="display:none;">
 
-<input type="file" id="uploadVideo">
+<div class="controls">
+<input type="file" id="uploadVideo" accept="video/*">
+<button id="startBtn">Start</button>
+<button id="finishBtn">Finish</button>
+<button id="pdfBtn">Download PDF</button>
+</div>
 
-<button onclick="start()">Start</button>
-<button onclick="finish()">Finish</button>
-<button onclick="downloadPDF()">Download PDF</button>
+<div class="grid">
+  <div>
+    <h3>Teacher</h3>
+    <video id="teacherVideo" controls></video>
+  </div>
 
-<video id="teacherVideo" controls></video>
-<video class="input_video" style="display:none"></video>
-<canvas id="canvas"></canvas>
+  <div>
+    <h3>You</h3>
+    <video class="input_video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+  </div>
+</div>
 
-<h3>Score: <span id="score">0</span></h3>
+<h2>Score: <span id="score">0</span></h2>
+<h3 id="feedback"></h3>
 
 <canvas id="chart"></canvas>
 
-<h3>Leaderboard</h3>
+<h2>🏆 Leaderboard</h2>
 <div id="leaderboard"></div>
 
 </div>
