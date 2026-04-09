@@ -2,58 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Dance Coach PRO</title>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
-<div id="login-screen" class="overlay">
+<div class="overlay" id="login-overlay">
     <div class="glass-card">
-        <h1>💎 AI DANCE COACH <span class="pro-tag">PRO</span></h1>
-        <p>Master your moves with real-time CV analysis.</p>
-        <button id="login-btn" class="main-btn">Sign in with Google</button>
+        <h1>💎 AI DANCE COACH PRO</h1>
+        <button id="login-btn">Google Login</button>
     </div>
 </div>
 
-<div class="app-container" style="display:none;" id="main-app">
-    <header>
-        <div class="logo">AI DANCE COACH <span class="pro-tag">PRO</span></div>
-        <div id="user-info"></div>
-    </header>
+<div class="app-container" id="app-body" style="display:none;">
+    <div class="top-bar">
+        <input type="file" id="uploadVideo" accept="video/*">
+        <button onclick="startTraining()">🚀 SYNC & START</button>
+    </div>
 
-    <div class="workspace">
-        <div class="video-card">
-            <div class="card-header">TEACHER GUIDE</div>
-            <input type="file" id="uploadVideo" accept="video/*">
+    <div class="main-workspace">
+        <div class="card">
+            <h3>TEACHER</h3>
             <video id="teacherVideo" crossorigin="anonymous"></video>
         </div>
-
-        <div class="video-card">
-            <div class="card-header">LIVE TRAINING</div>
+        <div class="card">
+            <h3>YOU</h3>
             <canvas id="output_canvas" width="640" height="480"></canvas>
             <video id="input_video" style="display:none"></video>
         </div>
     </div>
 
-    <div class="dashboard-footer">
-        <div class="metric">
-            <span>ACCURACY</span>
-            <div id="accuracy-val">0%</div>
-        </div>
-        <div class="metric">
-            <span>FEEDBACK</span>
-            <div id="feedback-text">READY</div>
-        </div>
-        <div class="controls">
-            <button onclick="startSession()" class="action-btn">🚀 SYNC & START</button>
-            <button onclick="generatePDF()" class="action-btn download">📥 REPORT</button>
-        </div>
+    <div class="dashboard">
+        <div class="stat">ACCURACY: <span id="accuracy">0%</span></div>
+        <div class="stat">FEEDBACK: <span id="feedback">READY</span></div>
     </div>
 </div>
 
