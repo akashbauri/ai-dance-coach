@@ -14,33 +14,34 @@
 <div id="login-overlay" class="overlay">
     <div class="glass-card login-box">
         <h1>💎 AI DANCE COACH PRO</h1>
-        <p>Login to start your performance</p>
-        <button id="login-btn" onclick="handleLogin()" class="btn-primary">Sign in with Google</button>
+        <p>Login to activate your AI and Camera</p>
+        <button id="signin-btn" class="btn-primary">Sign in with Google</button>
     </div>
 </div>
 
 <div id="app-content" style="display:none;">
     <header class="app-header">
         <div class="brand">💎 AI DANCE COACH PRO</div>
+        <div id="user-info"></div>
     </header>
 
-    <div class="video-container">
-        <div class="video-box">
-            <span>TEACHER GUIDE</span>
+    <div class="video-grid">
+        <div class="glass-card">
+            <h3>TEACHER GUIDE</h3>
             <input type="file" id="uploadVideo" accept="video/*">
-            <video id="teacherVideo"></video>
+            <video id="teacherVideo" width="640" height="480"></video>
         </div>
-        <div class="video-box">
-            <span>YOUR PERFORMANCE</span>
+        <div class="glass-card">
+            <h3>YOUR PERFORMANCE</h3>
             <canvas id="output_canvas" width="640" height="480"></canvas>
             <video id="input_video" style="display:none"></video>
         </div>
     </div>
 
-    <div class="controls">
+    <div class="controls-bar">
         <div class="stats">
             ACCURACY: <span id="accuracy">0%</span>
-            <div class="bar"><div id="gauge-fill"></div></div>
+            <div class="gauge-bg"><div id="gauge-fill"></div></div>
         </div>
         <div class="btns">
             <button onclick="trainTeacher()" class="btn-secondary">🧠 1. TRAIN AI</button>
@@ -50,6 +51,6 @@
     </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
