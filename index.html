@@ -1,70 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Dance Coach PRO</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+    <h1>💎 AI Dance Coach PRO</h1>
 
-<div id="login-overlay" class="overlay">
-    <div class="glass-login-card">
-        <div class="logo-icon">💎</div>
-        <h1>Welcome Back</h1>
-        <p>Log in to your AI Dance Coach account</p>
-        <button id="google-login-btn" class="social-btn google">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="Google">
-            Sign in with Google
-        </button>
-        <div class="divider">or use email</div>
-        <input type="email" placeholder="you@example.com" class="login-input">
-        <input type="password" placeholder="Your password" class="login-input">
-        <button class="login-submit">Login</button>
+    <div class="top-bar">
+        <input type="file" id="uploadVideo" accept="video/*">
+        <button id="trainBtn" onclick="trainTeacher()">🧠 1. Train Teacher</button>
+        <button id="startBtn" onclick="startTraining()" disabled>🚀 2. Start Dancing</button>
+        <button onclick="downloadReport()">📥 Download Result</button>
     </div>
-</div>
 
-<div id="app-content" style="display:none;">
-    <header class="app-header">
-        <div class="brand">💎 AI DANCE COACH <span class="pro-badge">PRO</span></div>
-        <div id="user-profile"></div>
-    </header>
-
-    <div class="workspace">
-        <div class="video-container card">
-            <div class="card-label">TEACHER GUIDE</div>
-            <input type="file" id="uploadVideo" accept="video/*" class="custom-file-input">
-            <video id="teacherVideo" crossorigin="anonymous"></video>
+    <div class="container">
+        <div class="card">
+            <h2>Teacher Video</h2>
+            <video id="teacherVideo" width="640" height="480" muted></video>
         </div>
-
-        <div class="video-container card">
-            <div class="card-label">LIVE TRAINING</div>
-            <canvas id="output_canvas" width="640" height="480"></canvas>
-            <video id="input_video" style="display:none"></video>
+        <div class="card">
+            <h2>Live Training</h2>
+            <canvas class="output_canvas" width="640" height="480"></canvas>
+            <video class="input_video" style="display:none"></video>
         </div>
     </div>
 
-    <div class="action-footer">
-        <div class="metric-group">
-            <div class="m-item">
-                <span class="m-label">ACCURACY</span>
-                <div id="accuracy-val">0%</div>
-            </div>
-            <div class="m-item">
-                <span class="m-label">FEEDBACK</span>
-                <div id="feedback-text">READY</div>
-            </div>
+    <div class="dashboard">
+        <div class="metric">
+            <h3>Accuracy</h3>
+            <div class="gauge"><div id="gauge-fill"></div></div>
+            <div id="accuracy">0%</div>
         </div>
-        <div class="btn-group">
-            <button onclick="startSession()" class="primary-btn">🚀 SYNC & START</button>
+        <div class="metric">
+            <h3>Feedback</h3>
+            <div id="feedback">Upload & Train first</div>
         </div>
     </div>
-</div>
 
-<script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
