@@ -4,6 +4,7 @@
   <title>AI Dance Coach PRO</title>
   <link rel="stylesheet" href="style.css">
 
+  <!-- MediaPipe -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 </head>
@@ -16,7 +17,6 @@
 <div id="loginUI" class="card">
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-
   <button onclick="login()">Login</button>
   <button onclick="googleLogin()">Google</button>
 </div>
@@ -24,8 +24,9 @@
 <!-- APP -->
 <div id="appUI" style="display:none">
 
+  <input type="file" id="videoUpload">
+
   <div class="controls">
-    <input type="file" id="videoUpload">
     <button onclick="start()">Start</button>
     <button onclick="finish()">Finish</button>
     <button onclick="downloadReport()">Download</button>
@@ -49,7 +50,6 @@
   </div>
 
   <h2 id="score">Accuracy: 0%</h2>
-
   <ul id="leaderboard"></ul>
 
 </div>
