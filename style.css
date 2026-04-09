@@ -1,8 +1,8 @@
 body {
   background: #0b0f1a;
   color: white;
-  font-family: Arial;
   text-align: center;
+  font-family: Arial;
 }
 
 .card {
@@ -14,18 +14,18 @@ body {
 }
 
 input {
-  width: 90%;
   padding: 10px;
   margin: 5px;
+  width: 90%;
 }
 
 button {
-  padding: 10px 15px;
+  padding: 10px;
   margin: 5px;
   background: #22c55e;
   border: none;
-  color: white;
   border-radius: 6px;
+  color: white;
   cursor: pointer;
 }
 
@@ -33,7 +33,6 @@ button {
   display: flex;
   justify-content: center;
   gap: 40px;
-  margin-top: 20px;
 }
 
 .cam-box {
@@ -42,7 +41,6 @@ button {
 
 video {
   width: 300px;
-  border-radius: 10px;
 }
 
 canvas {
