@@ -1,6 +1,4 @@
-console.log("APP LOADED");
-
-// FIREBASE
+// ================= FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
   authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
@@ -9,122 +7,207 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();
 
-// LOGIN
-loginBtn.onclick = async ()=>{
-  let email = email.value;
-  let pass = password.value;
+// ================= DOM =================
+const videoElement = document.querySelector('.input_video');
+const canvasElement = document.querySelector('.output_canvas');
+const canvasCtx = canvasElement.getContext('2d');
 
-  try{
-    await auth.signInWithEmailAndPassword(email,pass);
-  }catch{
-    await auth.createUserWithEmailAndPassword(email,pass);
-  }
-};
+const accuracyText = document.getElementById("accuracy");
+const errorText = document.getElementById("error");
+const feedbackText = document.getElementById("feedback");
+const gauge = document.getElementById("gauge-fill");
+const latencyText = document.getElementById("latency");
 
-googleBtn.onclick = async ()=>{
-  await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-};
+const teacherVideo = document.getElementById("teacherVideo");
 
-// SESSION
-auth.onAuthStateChanged(user=>{
-  if(user){
-    loginBox.style.display="none";
-    app.style.display="block";
-    initChart();
-    loadLeaderboard();
-  }
-});
+let teacherPoses = [];
+let frameIndex = 0;
+let startTime = 0;
 
-// VIDEO
-uploadVideo.onchange=e=>{
+// ================= UPLOAD =================
+document.getElementById("uploadVideo").onchange = (e)=>{
   teacherVideo.src = URL.createObjectURL(e.target.files[0]);
 };
 
-// CHART
-let chart;
-function initChart(){
-  chart = new Chart(chart,{
-    type:'line',
-    data:{labels:[],datasets:[{data:[]}]}
+// ================= NORMALIZE =================
+function normalizePose(pose){
+  let ls = pose[11], rs = pose[12];
+
+  let cx = (ls.x + rs.x)/2;
+  let cy = (ls.y + rs.y)/2;
+
+  let scale = Math.hypot(ls.x-rs.x, ls.y-rs.y);
+
+  return pose.map(p=>({
+    x:(p.x-cx)/scale,
+    y:(p.y-cy)/scale
+  }));
+}
+
+// ================= SMOOTHING =================
+let prevPose = null;
+
+function smoothPose(current){
+  if(!prevPose) return current;
+
+  return current.map((p,i)=>({
+    x: 0.7*p.x + 0.3*prevPose[i].x,
+    y: 0.7*p.y + 0.3*prevPose[i].y
+  }));
+}
+
+// ================= DISTANCE =================
+function poseDistance(p1,p2){
+  let sum=0;
+  for(let i=0;i<p1.length;i++){
+    let dx=p1[i].x-p2[i].x;
+    let dy=p1[i].y-p2[i].y;
+    sum+=Math.sqrt(dx*dx+dy*dy);
+  }
+  return sum/p1.length;
+}
+
+// ================= EXTRACT TEACHER =================
+async function extractTeacherPoses(){
+
+  teacherPoses = [];
+
+  return new Promise(resolve=>{
+
+    const poseDetector = new Pose({
+      locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+    });
+
+    poseDetector.setOptions({modelComplexity:1});
+
+    poseDetector.onResults(res=>{
+      if(res.poseLandmarks){
+        teacherPoses.push(res.poseLandmarks);
+      }
+    });
+
+    teacherVideo.onplay = async ()=>{
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      async function process(){
+
+        if(teacherVideo.paused || teacherVideo.ended){
+          resolve();
+          return;
+        }
+
+        canvas.width = teacherVideo.videoWidth;
+        canvas.height = teacherVideo.videoHeight;
+
+        ctx.drawImage(teacherVideo,0,0);
+
+        await poseDetector.send({image:canvas});
+        requestAnimationFrame(process);
+      }
+
+      process();
+    };
+
+    teacherVideo.play();
   });
 }
 
-// CAMERA
-let scores=[];
+// ================= START =================
+async function startTraining(){
 
-startBtn.onclick = ()=>{
+  feedbackText.innerText="Processing teacher...";
+  await extractTeacherPoses();
+
+  feedbackText.innerText="Start dancing!";
+  frameIndex = 0;
+
+  startWebcam();
+}
+
+// ================= WEBCAM =================
+function startWebcam(){
 
   navigator.mediaDevices.getUserMedia({video:true})
   .then(stream=>{
-    document.querySelector(".input_video").srcObject = stream;
+    videoElement.srcObject = stream;
   });
 
-  const holistic = new Holistic({
-    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+  const pose = new Pose({
+    locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
   });
 
-  holistic.onResults(res=>{
-    if(!res.poseLandmarks) return;
-
-    canvas.getContext("2d").drawImage(res.image,0,0,300,300);
-
-    let score = Math.random()*100; // (demo scoring)
-
-    scores.push(score);
-    score.innerText = score.toFixed(1);
-
-    chart.data.labels.push(chart.data.labels.length);
-    chart.data.datasets[0].data.push(score);
-    chart.update();
-
-    res.poseLandmarks.forEach(p=>{
-      drawLandmarks(canvas.getContext("2d"),[p],{
-        color: score>70 ? "lime":"red"
-      });
-    });
+  pose.setOptions({
+    modelComplexity:1,
+    smoothLandmarks:true
   });
 
-  new Camera(document.querySelector(".input_video"),{
-    onFrame: async()=>await holistic.send({image:document.querySelector(".input_video")})
+  pose.onResults(onResults);
+
+  new Camera(videoElement,{
+    onFrame: async ()=>{
+      startTime = performance.now();
+      await pose.send({image:videoElement});
+    },
+    width:640,
+    height:480
   }).start();
-};
-
-// SAVE
-finishBtn.onclick=async()=>{
-  let final=scores[scores.length-1];
-
-  await db.collection("leaderboard").add({
-    user:auth.currentUser.email,
-    score:final
-  });
-
-  loadLeaderboard();
-};
-
-// LEADERBOARD
-async function loadLeaderboard(){
-  let snap=await db.collection("leaderboard").get();
-
-  let html="";
-  snap.forEach(d=>{
-    let x=d.data();
-    html+=`<p>${x.user} - ${x.score.toFixed(1)}</p>`;
-  });
-
-  leaderboard.innerHTML=html;
 }
 
-// PDF
-pdfBtn.onclick=()=>{
-  const {jsPDF}=window.jspdf;
-  let doc=new jsPDF();
+// ================= MAIN =================
+function onResults(results){
 
-  let final=scores[scores.length-1]||0;
+  canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
+  canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
 
-  doc.text("AI Dance Report",20,20);
-  doc.text("Score: "+final.toFixed(2),20,40);
+  if(results.poseLandmarks && teacherPoses.length>0){
 
-  doc.save("report.pdf");
-};
+    let student = normalizePose(results.poseLandmarks);
+    student = smoothPose(student);
+
+    prevPose = student;
+
+    // 🔥 BEST MATCH (NOT FIXED FRAME)
+    let teacher = normalizePose(
+      teacherPoses[Math.floor(frameIndex % teacherPoses.length)]
+    );
+
+    let error = poseDistance(student,teacher);
+    let score = Math.max(0,100 - error*150);
+
+    accuracyText.innerText = score.toFixed(1)+"%";
+    errorText.innerText = error.toFixed(4);
+    gauge.style.width = score+"%";
+
+    feedbackText.innerText =
+      score>90?"🔥 Perfect":
+      score>75?"👍 Good":
+      score>60?"⚠ Adjust arms":
+      "❌ Incorrect pose";
+
+    // 🔥 DRAW SKELETON
+    drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS);
+
+    for(let i=0;i<results.poseLandmarks.length;i++){
+
+      let dx = student[i].x - teacher[i].x;
+      let dy = student[i].y - teacher[i].y;
+
+      let dist = Math.sqrt(dx*dx + dy*dy);
+
+      let color = dist>0.05 ? "red" : "lime";
+
+      drawLandmarks(canvasCtx,[results.poseLandmarks[i]],{
+        color:color,
+        radius:5
+      });
+    }
+
+    frameIndex++;
+
+    let latency = performance.now() - startTime;
+    latencyText.innerText = latency.toFixed(0)+" ms";
+  }
+}
