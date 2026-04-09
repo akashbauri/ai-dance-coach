@@ -2,44 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Dance Coach PRO | Advanced</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dance Coach PRO</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 </head>
 <body>
 
-<div id="login-overlay" class="glass-overlay">
-    <div class="login-card">
-        <h1>💎 DANCE COACH <span class="pro">PRO</span></h1>
-        <button id="google-login">Login with Google</button>
+<div id="login-overlay" class="overlay">
+    <div class="glass-login-card">
+        <div class="logo-icon">💎</div>
+        <h1>Welcome Back</h1>
+        <p>Log in to your AI Dance Coach account</p>
+        <button id="google-login-btn" class="social-btn google">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="Google">
+            Sign in with Google
+        </button>
+        <div class="divider">or use email</div>
+        <input type="email" placeholder="you@example.com" class="login-input">
+        <input type="password" placeholder="Your password" class="login-input">
+        <button class="login-submit">Login</button>
     </div>
 </div>
 
-<div class="app-main" id="app-content" style="display:none">
-    <header>
-        <div class="logo">AI DANCE COACH PRO</div>
-        <div id="user-display"></div>
+<div id="app-content" style="display:none;">
+    <header class="app-header">
+        <div class="brand">💎 AI DANCE COACH <span class="pro-badge">PRO</span></div>
+        <div id="user-profile"></div>
     </header>
 
-    <div class="training-grid">
-        <div class="card teacher">
-            <h3>TEACHER GUIDE</h3>
-            <input type="file" id="uploadVideo" accept="video/*">
+    <div class="workspace">
+        <div class="video-container card">
+            <div class="card-label">TEACHER GUIDE</div>
+            <input type="file" id="uploadVideo" accept="video/*" class="custom-file-input">
             <video id="teacherVideo" crossorigin="anonymous"></video>
         </div>
-        <div class="card student">
-            <h3>LIVE TRAINING</h3>
+
+        <div class="video-container card">
+            <div class="card-label">LIVE TRAINING</div>
             <canvas id="output_canvas" width="640" height="480"></canvas>
             <video id="input_video" style="display:none"></video>
         </div>
     </div>
 
-    <div class="pro-dashboard">
-        <div class="stat">ACCURACY: <span id="accuracy">0%</span></div>
-        <div class="stat">FEEDBACK: <span id="feedback">READY</span></div>
-        <button onclick="startTraining()" class="start-btn">🚀 START SYNC</button>
+    <div class="action-footer">
+        <div class="metric-group">
+            <div class="m-item">
+                <span class="m-label">ACCURACY</span>
+                <div id="accuracy-val">0%</div>
+            </div>
+            <div class="m-item">
+                <span class="m-label">FEEDBACK</span>
+                <div id="feedback-text">READY</div>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button onclick="startSession()" class="primary-btn">🚀 SYNC & START</button>
+        </div>
     </div>
 </div>
 
