@@ -2,19 +2,10 @@
 <html>
 <head>
   <title>AI Dance Coach PRO</title>
-
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase + App -->
-  <script type="module" src="script.js"></script>
-
-  <!-- MediaPipe -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-  <!-- Chart -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 </head>
 
 <body>
@@ -22,25 +13,26 @@
 <h1>💎 AI Dance Coach PRO</h1>
 
 <!-- LOGIN -->
-<div id="loginBox">
+<div id="loginUI" class="card">
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-  <button id="loginBtn">Login</button>
-  <button id="googleBtn">Google</button>
+
+  <button onclick="login()">Login</button>
+  <button onclick="googleLogin()">Google</button>
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;">
+<div id="appUI" style="display:none">
 
-  <input type="file" id="videoUpload" accept="video/*">
-
-  <div class="buttons">
-    <button id="startBtn">Start</button>
-    <button id="stopBtn">Finish</button>
-    <button id="downloadBtn">Download Report</button>
+  <div class="controls">
+    <input type="file" id="videoUpload">
+    <button onclick="start()">Start</button>
+    <button onclick="finish()">Finish</button>
+    <button onclick="downloadReport()">Download</button>
   </div>
 
-  <div class="video-container">
+  <div class="grid">
+
     <div>
       <h3>Teacher</h3>
       <video id="teacherVideo" controls></video>
@@ -48,19 +40,20 @@
 
     <div>
       <h3>You</h3>
-      <video id="webcam" autoplay></video>
-      <canvas id="canvas"></canvas>
+      <div class="cam-box">
+        <video id="webcam" autoplay></video>
+        <canvas id="canvas"></canvas>
+      </div>
     </div>
+
   </div>
 
-  <h2 id="scoreText">Score: 0</h2>
+  <h2 id="score">Accuracy: 0%</h2>
 
-  <canvas id="chart"></canvas>
-
-  <h3>🏆 Leaderboard</h3>
-  <div id="leaderboard"></div>
+  <ul id="leaderboard"></ul>
 
 </div>
 
+<script type="module" src="script.js"></script>
 </body>
 </html>
