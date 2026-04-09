@@ -1,52 +1,38 @@
-body{
-background:linear-gradient(135deg,#020617,#0f172a);
-color:white;
-font-family:sans-serif;
-text-align:center;
+body {
+  background: #0b1220;
+  color: white;
+  text-align: center;
+  font-family: Arial;
 }
 
-.card{
-background:rgba(255,255,255,0.05);
-padding:30px;
-border-radius:15px;
-width:300px;
-margin:auto;
-backdrop-filter:blur(10px);
+input {
+  padding: 10px;
+  margin: 5px;
 }
 
-input{
-display:block;
-margin:10px auto;
-padding:10px;
-width:90%;
-border-radius:8px;
-border:none;
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  background: #22c55e;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 6px;
 }
 
-button{
-padding:10px 20px;
-margin:10px;
-border:none;
-border-radius:10px;
-background:#22c55e;
-color:white;
-cursor:pointer;
-transition:0.3s;
+.video-container {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 20px;
 }
 
-button:hover{
-transform:scale(1.1);
-background:#16a34a;
+video {
+  width: 300px;
+  border-radius: 10px;
 }
 
-.grid{
-display:flex;
-justify-content:center;
-gap:30px;
-margin-top:20px;
-}
-
-video, canvas{
-width:300px;
-border-radius:10px;
+canvas {
+  position: absolute;
+  left: 0;
 }
