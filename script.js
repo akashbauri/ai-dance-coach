@@ -1,87 +1,155 @@
-const videoElement = document.getElementById('input_video');
-const canvasElement = document.getElementById('output_canvas');
+const videoElement = document.querySelector('.input_video');
+const canvasElement = document.querySelector('.output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
-const teacherVideo = document.getElementById('teacherVideo');
+
+const accuracyText = document.getElementById("accuracy");
+const errorText = document.getElementById("error");
+const feedbackText = document.getElementById("feedback");
+const gauge = document.getElementById("gauge-fill");
+const latencyText = document.getElementById("latency");
+
+const teacherVideo = document.getElementById("teacherVideo");
 
 let teacherPoses = [];
-let scores = [];
+let frameIndex = 0;
+let startTime = 0;
 
-function handleLogin() {
-    document.getElementById('login-overlay').style.display = 'none';
-    document.getElementById('app-content').style.display = 'block';
-    initCamera();
+// ✅ FILE UPLOAD HANDLER
+document.getElementById("uploadVideo").onchange = (e) => {
+    teacherVideo.src = URL.createObjectURL(e.target.files[0]);
+};
+
+// ✅ HELPER: CLONE LANDMARKS
+function clonePose(p) {
+    return p.map(x => ({ x: x.x, y: x.y }));
 }
 
-function initCamera() {
-    const pose = new Pose({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
+// ✅ NORMALIZATION: Keeps comparison fair regardless of distance from camera
+function normalizePose(pose) {
+    let ls = pose[11], rs = pose[12];
+    let cx = (ls.x + rs.x) / 2;
+    let cy = (ls.y + rs.y) / 2;
+    let scale = Math.hypot(ls.x - rs.x, ls.y - rs.y);
+
+    return pose.map(p => ({
+        x: (p.x - cx) / scale,
+        y: (p.y - cy) / scale
+    }));
+}
+
+// ✅ POSE DISTANCE: Calculates how far you are from the teacher
+function poseDistance(p1, p2) {
+    let sum = 0;
+    for (let i = 0; i < p1.length; i++) {
+        let dx = p1[i].x - p2[i].x;
+        let dy = p1[i].y - p2[i].y;
+        sum += Math.sqrt(dx * dx + dy * dy);
+    }
+    return sum / p1.length;
+}
+
+// ✅ EXTRACT TEACHER POSES: Analyzes the uploaded video
+async function extractTeacherPoses() {
+    teacherPoses = [];
+    return new Promise(resolve => {
+        const poseDetector = new Pose({
+            locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+        });
+        poseDetector.setOptions({ modelComplexity: 1 });
+        poseDetector.onResults(res => {
+            if (res.poseLandmarks) {
+                teacherPoses.push(clonePose(res.poseLandmarks));
+            }
+        });
+
+        teacherVideo.onplay = async () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            async function process() {
+                if (teacherVideo.paused || teacherVideo.ended) {
+                    resolve();
+                    return;
+                }
+                canvas.width = teacherVideo.videoWidth;
+                canvas.height = teacherVideo.videoHeight;
+                ctx.drawImage(teacherVideo, 0, 0);
+                await poseDetector.send({ image: canvas });
+                requestAnimationFrame(process);
+            }
+            process();
+        };
+        teacherVideo.play();
+    });
+}
+
+// ✅ START TRAINING: Triggered by button click
+async function startTraining() {
+    if (!teacherVideo.src) {
+        alert("Please upload a video first!");
+        return;
+    }
+    feedbackText.innerText = "Processing teacher...";
+    await extractTeacherPoses();
+    feedbackText.innerText = "Start dancing!";
+    frameIndex = 0;
+    startWebcam(); // Now browser will ask for permission
+}
+
+// ✅ WEBCAM INITIALIZATION
+function startWebcam() {
+    const pose = new Pose({
+        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+    });
     pose.setOptions({ modelComplexity: 1, smoothLandmarks: true });
     pose.onResults(onResults);
 
     const camera = new Camera(videoElement, {
-        onFrame: async () => { await pose.send({image: videoElement}); },
-        width: 640, height: 480
+        onFrame: async () => {
+            startTime = performance.now();
+            await pose.send({ image: videoElement });
+        },
+        width: 640,
+        height: 480
     });
     camera.start();
 }
 
-async function trainTeacher() {
-    if(!teacherVideo.src) return alert("Upload video first!");
-    teacherPoses = [];
-    teacherVideo.play();
-    const trainer = new Pose({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
-    trainer.onResults(res => { if(res.poseLandmarks) teacherPoses.push(res.poseLandmarks); });
-
-    const check = setInterval(async () => {
-        if(teacherVideo.ended || teacherVideo.paused) {
-            clearInterval(check);
-            document.getElementById('startBtn').disabled = false;
-            alert("Training Complete!");
-        } else { await trainer.send({image: teacherVideo}); }
-    }, 100);
-}
-
-function startDancing() {
-    teacherVideo.currentTime = 0;
-    teacherVideo.muted = false; // Sound enabled
-    teacherVideo.play();
-}
-
-// 🎯 UPDATED REAL-TIME COMPARISON WITH SKELETON
+// ✅ 🎯 REAL-TIME DRAWING & COMPARISON
 function onResults(results) {
-    // Clear the canvas and draw the new webcam frame
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    
+    // Draw the live camera feed
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     if (results.poseLandmarks && teacherPoses.length > 0) {
         let student = normalizePose(results.poseLandmarks);
         let teacher = normalizePose(teacherPoses[Math.min(frameIndex, teacherPoses.length - 1)]);
 
-        // 1. DRAW THE SKELETON (White lines connecting joints)
-        // This uses the POSE_CONNECTIONS map from MediaPipe to draw the body structure
+        // 1. DRAW SKELETON (White connecting lines)
         drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
-            color: '#FFFFFF', 
+            color: '#FFFFFF',
             lineWidth: 2
         });
 
-        // 2. DRAW COLORED JOINTS (Feedback dots)
+        // 2. DRAW COLORED JOINTS & CALCULATE ACCURACY
         for (let i = 0; i < results.poseLandmarks.length; i++) {
             let dx = student[i].x - teacher[i].x;
             let dy = student[i].y - teacher[i].y;
             let dist = Math.sqrt(dx * dx + dy * dy);
 
-            // Change dot color based on accuracy distance
+            // Change dot color: Green for close, Red for far
             let color = dist > 0.1 ? "red" : "green";
 
             drawLandmarks(canvasCtx, [results.poseLandmarks[i]], {
                 color: color,
                 fillColor: color,
                 lineWidth: 2,
-                radius: 4 // Slightly larger for better visibility
+                radius: 4
             });
         }
 
-        // 3. UPDATE METRICS
+        // 3. UPDATE UI
         let error = poseDistance(student, teacher);
         let score = Math.max(0, 100 - error * 200);
 
@@ -97,14 +165,9 @@ function onResults(results) {
 
         frameIndex++;
 
-        // 4. LATENCY TRACKING
+        // ⏱ LATENCY
         let latency = performance.now() - startTime;
         latencyText.innerText = latency.toFixed(0) + " ms";
     }
     canvasCtx.restore();
 }
-}
-
-document.getElementById("uploadVideo").onchange = (e) => {
-    teacherVideo.src = URL.createObjectURL(e.target.files[0]);
-};
