@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Dance Coach PRO | MVP</title>
+    <title>AI Dance Coach PRO | Final MVP</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
@@ -14,43 +13,36 @@
 
 <div id="login-overlay" class="overlay">
     <div class="login-card">
-        <h1>💎 AI DANCE COACH PRO</h1>
-        <p>Login to activate AI and Camera</p>
-        <div class="auth-box">
+        <h1>💎 AI DANCE COACH</h1>
+        <div class="auth-form">
             <input type="email" id="email" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password">
-            <button class="btn-primary" onclick="handleAuth('email')">Login with Email</button>
-            <div class="divider"><span>OR</span></div>
-            <button class="btn-google" onclick="handleAuth('google')">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_Icons_By_Google.png" width="20"> 
-                Sign in with Google
-            </button>
+            <button class="btn-email" onclick="handleAuth('email')">Login</button>
+            <div class="divider">OR</div>
+            <button class="btn-google" onclick="handleAuth('google')">Sign in with Google</button>
         </div>
     </div>
 </div>
 
 <div id="app-content" style="display:none;">
-    <div class="top-nav">
-        <div class="upload-section">
-            <label for="uploadVideo" class="custom-file-upload">📁 Select Teacher Video</label>
-            <input type="file" id="uploadVideo" accept="video/*">
-        </div>
-        <button id="syncBtn" class="btn-sync" onclick="startDanceSync()" disabled>🚀 START SYNC</button>
-        <button class="btn-report" onclick="generateFinalReport()">📥 DOWNLOAD RESULT</button>
+    <div class="header-controls">
+        <input type="file" id="uploadVideo" accept="video/*">
+        <button id="syncBtn" onclick="startSync()" disabled>🚀 START SYNC</button>
+        <button onclick="downloadPDF()">📥 DOWNLOAD RESULT</button>
     </div>
 
-    <div class="studio-container">
-        <div class="view-panel">
-            <div class="label-tag">TEACHER GUIDE</div>
-            <video id="teacherVideo" preload="auto"></video>
+    <div class="studio">
+        <div class="viewport">
+            <span class="tag">TEACHER GUIDE</span>
+            <video id="teacherVideo"></video>
         </div>
 
-        <div class="view-panel">
-            <div class="label-tag">YOUR PERFORMANCE</div>
-            <div class="hud-display">
+        <div class="viewport">
+            <span class="tag">YOUR PERFORMANCE</span>
+            <div class="hud">
                 <div class="hud-item">ACCURACY: <span id="acc-val">0%</span></div>
                 <div class="hud-item">ERROR: <span id="err-val">0.00</span></div>
-                <div class="hud-status" id="feedback-tag">READY</div>
+                <div id="feedback-tag" class="status-msg">READY</div>
             </div>
             <canvas id="output_canvas"></canvas>
             <video id="webcam_video" style="display:none"></video>
