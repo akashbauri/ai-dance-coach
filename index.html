@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Dance Coach PRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dance Coach PRO | MVP</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
@@ -14,36 +15,46 @@
 <div id="login-overlay" class="overlay">
     <div class="login-card">
         <h1>💎 AI DANCE COACH PRO</h1>
-        <button id="signin-btn">Sign in with Google</button>
+        <p>Login to activate AI and Camera</p>
+        <div class="auth-box">
+            <input type="email" id="email" placeholder="Email Address">
+            <input type="password" id="password" placeholder="Password">
+            <button class="btn-primary" onclick="handleAuth('email')">Login with Email</button>
+            <div class="divider"><span>OR</span></div>
+            <button class="btn-google" onclick="handleAuth('google')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_Icons_By_Google.png" width="20"> 
+                Sign in with Google
+            </button>
+        </div>
     </div>
 </div>
 
 <div id="app-content" style="display:none;">
-    <div class="top-bar">
-        <input type="file" id="uploadVideo" accept="video/*">
-        <button onclick="trainTeacher()">🚀 1. Train AI</button>
-        <button id="startBtn" onclick="startDancing()" disabled>🔥 2. Start Sync</button>
-        <button onclick="downloadReport()">📥 Download Result</button>
+    <div class="top-nav">
+        <div class="upload-section">
+            <label for="uploadVideo" class="custom-file-upload">📁 Select Teacher Video</label>
+            <input type="file" id="uploadVideo" accept="video/*">
+        </div>
+        <button id="syncBtn" class="btn-sync" onclick="startDanceSync()" disabled>🚀 START SYNC</button>
+        <button class="btn-report" onclick="generateFinalReport()">📥 DOWNLOAD RESULT</button>
     </div>
 
-    <div class="container">
-        <div class="card">
-            <h2>Teacher Guide</h2>
-            <video id="teacherVideo" width="640" height="480"></video>
+    <div class="studio-container">
+        <div class="view-panel">
+            <div class="label-tag">TEACHER GUIDE</div>
+            <video id="teacherVideo" preload="auto"></video>
         </div>
-        <div class="card">
-            <h2>Your Performance</h2>
-            <canvas class="output_canvas" width="640" height="480"></canvas>
-            <video class="input_video" style="display:none"></video>
-        </div>
-    </div>
 
-    <div class="dashboard">
-        <div class="metric">
-            <h3>Accuracy: <span id="accuracy">0%</span></h3>
-            <div class="gauge"><div id="gauge-fill"></div></div>
+        <div class="view-panel">
+            <div class="label-tag">YOUR PERFORMANCE</div>
+            <div class="hud-display">
+                <div class="hud-item">ACCURACY: <span id="acc-val">0%</span></div>
+                <div class="hud-item">ERROR: <span id="err-val">0.00</span></div>
+                <div class="hud-status" id="feedback-tag">READY</div>
+            </div>
+            <canvas id="output_canvas"></canvas>
+            <video id="webcam_video" style="display:none"></video>
         </div>
-        <div class="metric"><h3>Feedback: <span id="feedback">Ready</span></h3></div>
     </div>
 </div>
 
