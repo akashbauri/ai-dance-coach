@@ -1,9 +1,15 @@
-body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; margin: 0; }
-.overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; justify-content: center; align-items: center; }
-.login-card { padding: 40px; background: #1e293b; border-radius: 20px; border: 1px solid #6366f1; }
-.container { display: flex; justify-content: center; gap: 20px; padding: 20px; }
-video, canvas { width: 640px; height: 480px; background: #000; border-radius: 12px; object-fit: cover; border: 1px solid #334155; }
-button { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; margin: 5px; background: #22c55e; color: white; }
-#signin-btn { background: #4285f4; }
-.gauge { width: 200px; height: 10px; background: #334155; border-radius: 5px; margin: 10px auto; overflow: hidden; }
-#gauge-fill { height: 100%; width: 0%; background: #22c55e; transition: width 0.3s; }
+body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; margin: 0; text-align: center; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 999; }
+.login-card { background: #1e293b; padding: 40px; border-radius: 20px; width: 320px; border: 1px solid #334155; }
+.auth-form input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+.btn-email { width: 100%; padding: 12px; background: #6366f1; border: none; color: white; border-radius: 8px; cursor: pointer; }
+.btn-google { width: 100%; padding: 12px; background: #fff; color: #000; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; font-weight: bold; }
+
+.studio { display: flex; justify-content: center; gap: 20px; padding: 20px; flex-wrap: wrap; }
+.viewport { position: relative; width: 640px; height: 480px; background: #000; border-radius: 15px; overflow: hidden; border: 2px solid #334155; }
+video, canvas { width: 100%; height: 100%; object-fit: cover; } /* Fixes Visibility */
+
+.hud { position: absolute; top: 15px; right: 15px; text-align: right; z-index: 10; pointer-events: none; }
+.hud-item { background: rgba(0,0,0,0.7); padding: 5px 12px; border-radius: 6px; margin-bottom: 5px; color: #4ade80; font-weight: bold; }
+.status-msg { font-size: 28px; font-weight: 900; text-shadow: 2px 2px #000; }
+.tag { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 5px; font-size: 12px; }
