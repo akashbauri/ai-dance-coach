@@ -2,6 +2,9 @@ const video = document.querySelector('.input_video');
 const canvas = document.querySelector('.output_canvas');
 const ctx = canvas.getContext('2d');
 
+canvas.width = 640;
+canvas.height = 480;
+
 const teacherVideo = document.getElementById("teacherVideo");
 
 let teacherPoses = [];
@@ -18,7 +21,6 @@ let ls=p[11], rs=p[12];
 let cx=(ls.x+rs.x)/2;
 let cy=(ls.y+rs.y)/2;
 let scale=Math.hypot(ls.x-rs.x, ls.y-rs.y);
-
 return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
 }
 
@@ -28,25 +30,10 @@ let sum=0;
 for(let i=0;i<p1.length;i++){
 let dx=p1[i].x-p2[i].x;
 let dy=p1[i].y-p2[i].y;
-let w = (i<11)?1:(i<23)?2:3;
+let w=(i<11)?1:(i<23)?2:3;
 sum+=Math.sqrt(dx*dx+dy*dy)*w;
 }
 return sum/p1.length;
-}
-
-//////////////// DTW
-function dtw(a,b){
-let n=a.length,m=b.length;
-let dp=Array.from({length:n},()=>Array(m).fill(Infinity));
-dp[0][0]=dist(a[0],b[0]);
-
-for(let i=1;i<n;i++){
-for(let j=1;j<m;j++){
-let cost=dist(a[i],b[j]);
-dp[i][j]=cost+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
-}
-}
-return dp[n-1][m-1];
 }
 
 //////////////// EXTRACT TEACHER
@@ -116,37 +103,42 @@ document.getElementById("accuracy").innerText=score.toFixed(1)+"%";
 document.getElementById("error").innerText=error.toFixed(4);
 document.getElementById("gauge-fill").style.width=score+"%";
 
-document.getElementById("feedback").innerText =
-score>90?"🔥 Perfect":
-score>75?"👍 Good":
-"⚠ Improve";
-
 drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,{color:"#00FFAA"});
+
 for(let i=0;i<results.poseLandmarks.length;i++){
-let d=dist([student[i]],[teacher[i]]);
-let color=d>0.05?"red":"green";
-drawLandmarks(ctx,[results.poseLandmarks[i]],{color,lineWidth:5});
+let dx=student[i].x-teacher[i].x;
+let dy=student[i].y-teacher[i].y;
+let d=Math.sqrt(dx*dx+dy*dy);
+
+drawLandmarks(ctx,[results.poseLandmarks[i]],{
+color: d>0.05?"red":"green",
+lineWidth:5
+});
 }
 
 frameIndex++;
 }
 
-//////////////// CAMERA
+//////////////// CAMERA (FIXED)
 const pose = new Pose({
 locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
 });
+
 pose.onResults(onResults);
 
-const cam = new Camera(video,{
-onFrame: async()=>{ await pose.send({image:video}); },
-width:640,height:480
+const camera = new Camera(video,{
+onFrame: async ()=>{
+await pose.send({image:video});
+},
+width:640,
+height:480
 });
-cam.start();
 
-//////////////// FINISH
+camera.start();
+
+//////////////// FINAL
 function finishSession(){
-let error = dtw(studentPoses, teacherPoses);
-finalScore = Math.max(0,100-error*50);
+finalScore = scores.reduce((a,b)=>a+b,0)/scores.length;
 finalResult = finalScore>75?"PASS":"FAIL";
 
 document.getElementById("feedback").innerText =
