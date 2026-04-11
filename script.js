@@ -3,11 +3,17 @@ const canvasElement = document.querySelector('.output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
 const teacherVideo = document.getElementById("teacherVideo");
 
+const accuracyText = document.getElementById("accuracy");
+const errorText = document.getElementById("error");
+const feedbackText = document.getElementById("feedback");
+const bar = document.getElementById("bar");
+
 let teacherPoses = [];
-let studentIndex = 0;
+let frameIndex = 0;
+let scores = [];
 
 //////////////////////////////
-// LOAD VIDEO
+// LOAD TEACHER VIDEO
 document.getElementById("uploadVideo").onchange = (e)=>{
   teacherVideo.src = URL.createObjectURL(e.target.files[0]);
   extractTeacher();
@@ -40,7 +46,24 @@ function dist(p1,p2){
 }
 
 //////////////////////////////
-// EXTRACT TEACHER
+// SMOOTH SCORE
+function smoothScore(newScore){
+  scores.push(newScore);
+  let last = scores.slice(-10);
+  return last.reduce((a,b)=>a+b,0)/last.length;
+}
+
+//////////////////////////////
+// FEEDBACK
+function getFeedback(score){
+  if(score > 90) return "🔥 Perfect!";
+  if(score > 75) return "👍 Good! Adjust arms slightly";
+  if(score > 60) return "⚠ Fix posture";
+  return "❌ Incorrect pose";
+}
+
+//////////////////////////////
+// EXTRACT TEACHER POSES
 async function extractTeacher(){
 
   teacherPoses=[];
@@ -64,6 +87,7 @@ async function extractTeacher(){
 
       canvas.width=teacherVideo.videoWidth;
       canvas.height=teacherVideo.videoHeight;
+
       ctx.drawImage(teacherVideo,0,0);
 
       await pose.send({image:canvas});
@@ -76,7 +100,7 @@ async function extractTeacher(){
 }
 
 //////////////////////////////
-// MAIN AI
+// MAIN AI LOOP
 function onResults(results){
 
   canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
@@ -85,38 +109,52 @@ function onResults(results){
   if(!results.poseLandmarks || teacherPoses.length===0) return;
 
   let student = normalize(results.poseLandmarks);
-
-  let teacher = teacherPoses[Math.min(studentIndex, teacherPoses.length-1)];
+  let teacher = teacherPoses[Math.min(frameIndex, teacherPoses.length-1)];
 
   let error = dist(student, teacher);
-  let score = Math.max(0,100-error*180);
+  let rawScore = Math.max(0,100-error*180);
 
-  document.getElementById("accuracy").innerText = score.toFixed(1)+"%";
+  let score = smoothScore(rawScore);
 
-  //////////////////////////////
+  // UI UPDATE
+  accuracyText.innerText = "Accuracy: " + score.toFixed(1) + "%";
+  errorText.innerText = "Error: " + error.toFixed(4);
+  feedbackText.innerText = getFeedback(score);
+
+  // PROGRESS BAR
+  bar.style.width = score + "%";
+
+  // GLOW EFFECT
+  if(score > 85){
+    canvasElement.style.boxShadow = "0 0 20px #22c55e";
+  } else {
+    canvasElement.style.boxShadow = "none";
+  }
+
+  /////////////////////////////
   // DRAW SKELETON
   drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,{
     color:"#00FFAA",
     lineWidth:3
   });
 
-  //////////////////////////////
-  // RED GREEN JOINTS
+  /////////////////////////////
+  // RED/GREEN JOINTS
   for(let i=0;i<results.poseLandmarks.length;i++){
 
-    let dx = student[i].x - teacher[i].x;
-    let dy = student[i].y - teacher[i].y;
-    let d = Math.sqrt(dx*dx + dy*dy);
+    let dx=student[i].x-teacher[i].x;
+    let dy=student[i].y-teacher[i].y;
+    let d=Math.sqrt(dx*dx+dy*dy);
 
-    let color = d > 0.05 ? "red" : "green";
+    let color = d>0.05 ? "red" : "green";
 
-    drawLandmarks(canvasCtx, [results.poseLandmarks[i]],{
+    drawLandmarks(canvasCtx,[results.poseLandmarks[i]],{
       color: color,
       lineWidth:5
     });
   }
 
-  studentIndex++;
+  frameIndex++;
 }
 
 //////////////////////////////
@@ -141,9 +179,3 @@ const camera = new Camera(videoElement,{
 });
 
 camera.start();
-
-//////////////////////////////
-// FINISH
-function finishSession(){
-  alert("Session Completed!");
-}
