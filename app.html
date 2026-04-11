@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 </head>
 
 <body>
@@ -25,8 +26,12 @@
 
 <div class="card">
 <h3>You</h3>
-<video class="input_video" style="display:none"></video>
-<canvas class="output_canvas" width="640" height="480"></canvas>
+
+<!-- IMPORTANT FIX -->
+<video class="input_video" autoplay muted playsinline style="display:none"></video>
+
+<canvas class="output_canvas"></canvas>
+
 </div>
 
 </div>
@@ -45,7 +50,7 @@
 
 <button onclick="startTraining()" class="btn primary">🚀 Start</button>
 <button onclick="finishSession()" class="btn secondary">📄 Finish</button>
-<button onclick="downloadReport()" class="btn google">⬇ Download Report</button>
+<button onclick="downloadReport()" class="btn google">⬇ Download</button>
 
 </div>
 
