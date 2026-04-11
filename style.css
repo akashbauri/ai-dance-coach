@@ -1,32 +1,29 @@
 body{
-background:#0f172a;
+background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 font-family:Arial;
-}
-
-.center{
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-
-.card{
-background:rgba(255,255,255,0.05);
-padding:30px;
-border-radius:15px;
-width:300px;
 text-align:center;
 }
 
 .container{
 display:flex;
-gap:20px;
 justify-content:center;
+gap:30px;
 margin-top:20px;
 }
 
+.card{
+background:rgba(255,255,255,0.05);
+padding:15px;
+border-radius:15px;
+box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+
 video, canvas{
-width:48%;
+width:400px;
 border-radius:12px;
+}
+
+.dashboard{
+margin-top:20px;
 }
