@@ -19,24 +19,37 @@
 
 <div class="container">
 
-<!-- TEACHER -->
-<div class="card">
-<h3>Teacher</h3>
-<video id="teacherVideo" controls></video>
+  <!-- TEACHER -->
+  <div class="card">
+    <h3>Teacher</h3>
+    <video id="teacherVideo" controls></video>
+  </div>
+
+  <!-- STUDENT -->
+  <div class="card">
+    <h3>You (Live)</h3>
+
+    <!-- Hidden raw video -->
+    <video class="input_video" style="display:none"></video>
+
+    <!-- Only canvas visible -->
+    <canvas class="output_canvas" width="640" height="480"></canvas>
+  </div>
+
 </div>
 
-<!-- STUDENT -->
-<div class="card">
-<h3>You (Live)</h3>
-<video class="input_video"></video>
-<canvas class="output_canvas"></canvas>
-</div>
-
-</div>
-
+<!-- DASHBOARD -->
 <div class="dashboard">
-<h2 id="accuracy">0%</h2>
-<button onclick="finishSession()">Finish</button>
+
+  <h2 id="accuracy">Accuracy: 0%</h2>
+
+  <div class="progress">
+    <div id="bar" class="progress-bar"></div>
+  </div>
+
+  <h3 id="feedback">Start dancing...</h3>
+  <h4 id="error">Error: 0</h4>
+
 </div>
 
 <script src="script.js"></script>
