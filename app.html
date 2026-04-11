@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>AI Dance Coach</title>
+
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
@@ -11,19 +13,29 @@
 
 <body>
 
-<h2>AI Dance Training</h2>
+<h1>AI Dance Training</h1>
 
 <input type="file" id="uploadVideo">
 
 <div class="container">
-<video id="teacherVideo" controls></video>
 
-<video class="input_video" hidden></video>
+<!-- TEACHER -->
+<div class="card">
+<h3>Teacher</h3>
+<video id="teacherVideo" controls></video>
+</div>
+
+<!-- STUDENT -->
+<div class="card">
+<h3>You (Live)</h3>
+<video class="input_video"></video>
 <canvas class="output_canvas"></canvas>
 </div>
 
+</div>
+
 <div class="dashboard">
-<div id="accuracy">0%</div>
+<h2 id="accuracy">0%</h2>
 <button onclick="finishSession()">Finish</button>
 </div>
 
