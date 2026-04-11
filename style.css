@@ -27,3 +27,23 @@ border-radius:12px;
 .dashboard{
 margin-top:20px;
 }
+
+.progress{
+width:300px;
+height:15px;
+background:#334155;
+margin:auto;
+border-radius:10px;
+overflow:hidden;
+}
+
+.progress-bar{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,red,yellow,green);
+transition:0.3s;
+}
+
+.glow{
+box-shadow:0 0 20px #22c55e;
+}
