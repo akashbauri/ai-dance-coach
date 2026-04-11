@@ -1,215 +1,98 @@
-/* RESET */
 *{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
-/* BODY */
 body{
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#0f172a,#020617);
-  color:white;
-}
-
-/* CENTER LOGIN */
-.center{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-/* LOGIN CARD */
-.login-card{
-  background:rgba(255,255,255,0.05);
-  padding:40px;
-  border-radius:20px;
-  width:320px;
-  text-align:center;
-  backdrop-filter: blur(20px);
-  box-shadow:0 20px 50px rgba(0,0,0,0.6);
-}
-
-.login-card h1{
-  margin-bottom:15px;
-}
-
-.subtitle{
-  opacity:0.7;
-  margin-bottom:20px;
-}
-
-/* INPUT */
-input{
-  width:100%;
-  padding:12px;
-  margin:10px 0;
-  border-radius:10px;
-  border:none;
-  outline:none;
-  font-size:14px;
-}
-
-/* BUTTONS */
-.btn{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:bold;
-  transition:0.3s;
-}
-
-.btn:hover{
-  transform:scale(1.03);
-}
-
-.primary{
-  background:#22c55e;
-  color:white;
-}
-
-.secondary{
-  background:#334155;
-  color:white;
-}
-
-.google{
-  background:#db4437;
-  color:white;
-}
-
-.big{
-  font-size:18px;
-  padding:15px;
-}
-
-/* DIVIDER */
-.divider{
-  margin:15px 0;
-  opacity:0.5;
-}
-
-/* DASHBOARD PAGE */
-.dashboard-container{
-  text-align:center;
-  margin-top:100px;
-}
-
-/* MAIN CONTAINER */
-.container{
-  display:flex;
-  justify-content:center;
-  gap:40px;
-  margin-top:30px;
-  flex-wrap:wrap;
-}
-
-/* CARD */
-.card{
-  background:rgba(255,255,255,0.05);
-  padding:20px;
-  border-radius:20px;
-  box-shadow:0 20px 50px rgba(0,0,0,0.6);
-  transition:0.3s;
-}
-
-.card:hover{
-  transform:translateY(-5px);
-}
-
-.card h3{
-  margin-bottom:10px;
-}
-
-/* VIDEO */
-video{
-  width:420px;
-  border-radius:15px;
-}
-
-/* CANVAS (VERY IMPORTANT FIX) */
-canvas{
-  width:420px;
-  height:auto;
-  background:black;
-  border-radius:15px;
-}
-
-/* DASHBOARD (AI PAGE) */
-.dashboard{
-  margin-top:40px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:20px;
-}
-
-/* METRICS */
-.metrics{
-  display:flex;
-  gap:20px;
-  justify-content:center;
-}
-
-.metric{
-  background:rgba(255,255,255,0.05);
-  padding:15px;
-  border-radius:15px;
-  width:120px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
-}
-
-.metric h2{
-  font-size:22px;
-}
-
-.metric p{
-  font-size:13px;
-  opacity:0.7;
-}
-
-/* PROGRESS BAR */
-.progress{
-  width:300px;
-  height:15px;
-  background:#1e293b;
-  border-radius:10px;
-  overflow:hidden;
-}
-
-.progress-bar{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#ef4444,#facc15,#22c55e);
-  transition:0.4s ease;
-}
-
-/* FEEDBACK */
-#feedback{
-  font-size:18px;
-  font-weight:500;
+font-family: 'Segoe UI', sans-serif;
+background: linear-gradient(135deg,#0f172a,#020617);
+color:white;
+text-align:center;
 }
 
 /* HEADER */
 h1{
-  text-align:center;
-  margin-top:20px;
-  font-size:30px;
+margin-top:20px;
+font-size:30px;
 }
 
-/* FILE INPUT */
-input[type="file"]{
-  display:block;
-  margin:20px auto;
-  color:white;
+/* LAYOUT */
+.container{
+display:flex;
+justify-content:center;
+gap:40px;
+margin-top:30px;
+flex-wrap:wrap;
 }
 
-/* BUTTON SPACING */
+/* CARD */
+.card{
+background:rgba(255,255,255,0.05);
+padding:20px;
+border-radius:20px;
+box-shadow:0 20px 50px rgba(0,0,0,0.6);
+}
+
+.card h3{
+margin-bottom:10px;
+}
+
+/* VIDEO + CANVAS FIX */
+video, canvas{
+width:420px;
+height:320px;
+border-radius:15px;
+object-fit:cover;
+}
+
+/* DASHBOARD */
+.dashboard{
+margin-top:40px;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:20px;
+}
+
+/* METRICS */
+.metrics{
+display:flex;
+gap:20px;
+}
+
+.metric{
+background:rgba(255,255,255,0.05);
+padding:15px;
+border-radius:15px;
+width:120px;
+}
+
+/* PROGRESS */
+.progress{
+width:300px;
+height:15px;
+background:#1e293b;
+border-radius:10px;
+overflow:hidden;
+}
+
+.progress-bar{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,red,yellow,green);
+transition:0.3s;
+}
+
+/* BUTTON */
 button{
-  max-width:300px;
+padding:10px 20px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+margin-top:10px;
 }
+
+.primary{background:#22c55e;color:white;}
+.secondary{background:#334155;color:white;}
+.google{background:#db4437;color:white;}
