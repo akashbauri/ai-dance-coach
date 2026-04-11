@@ -1,181 +1,166 @@
-const videoElement = document.querySelector('.input_video');
-const canvasElement = document.querySelector('.output_canvas');
-const canvasCtx = canvasElement.getContext('2d');
+const video = document.querySelector('.input_video');
+const canvas = document.querySelector('.output_canvas');
+const ctx = canvas.getContext('2d');
+
 const teacherVideo = document.getElementById("teacherVideo");
 
-const accuracyText = document.getElementById("accuracy");
-const errorText = document.getElementById("error");
-const feedbackText = document.getElementById("feedback");
-const bar = document.getElementById("bar");
-
 let teacherPoses = [];
+let studentPoses = [];
 let frameIndex = 0;
 let scores = [];
 
-//////////////////////////////
-// LOAD TEACHER VIDEO
-document.getElementById("uploadVideo").onchange = (e)=>{
-  teacherVideo.src = URL.createObjectURL(e.target.files[0]);
-  extractTeacher();
+let finalScore = 0;
+let finalResult = "";
+
+//////////////// NORMALIZE
+function normalize(p){
+let ls=p[11], rs=p[12];
+let cx=(ls.x+rs.x)/2;
+let cy=(ls.y+rs.y)/2;
+let scale=Math.hypot(ls.x-rs.x, ls.y-rs.y);
+
+return p.map(pt=>({x:(pt.x-cx)/scale,y:(pt.y-cy)/scale}));
+}
+
+//////////////// DISTANCE
+function dist(p1,p2){
+let sum=0;
+for(let i=0;i<p1.length;i++){
+let dx=p1[i].x-p2[i].x;
+let dy=p1[i].y-p2[i].y;
+let w = (i<11)?1:(i<23)?2:3;
+sum+=Math.sqrt(dx*dx+dy*dy)*w;
+}
+return sum/p1.length;
+}
+
+//////////////// DTW
+function dtw(a,b){
+let n=a.length,m=b.length;
+let dp=Array.from({length:n},()=>Array(m).fill(Infinity));
+dp[0][0]=dist(a[0],b[0]);
+
+for(let i=1;i<n;i++){
+for(let j=1;j<m;j++){
+let cost=dist(a[i],b[j]);
+dp[i][j]=cost+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+}
+}
+return dp[n-1][m-1];
+}
+
+//////////////// EXTRACT TEACHER
+document.getElementById("uploadVideo").onchange=(e)=>{
+teacherVideo.src = URL.createObjectURL(e.target.files[0]);
+extractTeacher();
 };
 
-//////////////////////////////
-// NORMALIZE
-function normalize(p){
-  let ls=p[11], rs=p[12];
-  let cx=(ls.x+rs.x)/2;
-  let cy=(ls.y+rs.y)/2;
-  let scale=Math.hypot(ls.x-rs.x, ls.y-rs.y);
-
-  return p.map(x=>({x:(x.x-cx)/scale,y:(x.y-cy)/scale}));
-}
-
-//////////////////////////////
-// DISTANCE
-function dist(p1,p2){
-  let sum=0;
-  for(let i=0;i<p1.length;i++){
-    let dx=p1[i].x-p2[i].x;
-    let dy=p1[i].y-p2[i].y;
-    let d=Math.sqrt(dx*dx+dy*dy);
-
-    let w=(i<11)?1:(i<23)?2:3;
-    sum+=d*w;
-  }
-  return sum/p1.length;
-}
-
-//////////////////////////////
-// SMOOTH SCORE
-function smoothScore(newScore){
-  scores.push(newScore);
-  let last = scores.slice(-10);
-  return last.reduce((a,b)=>a+b,0)/last.length;
-}
-
-//////////////////////////////
-// FEEDBACK
-function getFeedback(score){
-  if(score > 90) return "🔥 Perfect!";
-  if(score > 75) return "👍 Good! Adjust arms slightly";
-  if(score > 60) return "⚠ Fix posture";
-  return "❌ Incorrect pose";
-}
-
-//////////////////////////////
-// EXTRACT TEACHER POSES
 async function extractTeacher(){
+teacherPoses=[];
 
-  teacherPoses=[];
+const pose = new Pose({
+locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+});
 
-  const pose = new Pose({
-    locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
-  });
+pose.onResults(r=>{
+if(r.poseLandmarks){
+teacherPoses.push(normalize(r.poseLandmarks));
+}
+});
 
-  pose.onResults(r=>{
-    if(r.poseLandmarks){
-      teacherPoses.push(normalize(r.poseLandmarks));
-    }
-  });
+teacherVideo.onplay=async()=>{
+const c=document.createElement("canvas");
+const ctx2=c.getContext("2d");
 
-  teacherVideo.onplay=async()=>{
-    const canvas=document.createElement("canvas");
-    const ctx=canvas.getContext("2d");
+async function loop(){
+if(teacherVideo.paused||teacherVideo.ended) return;
 
-    async function loop(){
-      if(teacherVideo.paused||teacherVideo.ended) return;
+c.width=teacherVideo.videoWidth;
+c.height=teacherVideo.videoHeight;
 
-      canvas.width=teacherVideo.videoWidth;
-      canvas.height=teacherVideo.videoHeight;
+ctx2.drawImage(teacherVideo,0,0);
+await pose.send({image:c});
 
-      ctx.drawImage(teacherVideo,0,0);
+requestAnimationFrame(loop);
+}
+loop();
+};
 
-      await pose.send({image:canvas});
-      requestAnimationFrame(loop);
-    }
-    loop();
-  };
-
-  teacherVideo.play();
+teacherVideo.play();
 }
 
-//////////////////////////////
-// MAIN AI LOOP
+//////////////// SMOOTH
+function smooth(s){
+scores.push(s);
+let last=scores.slice(-8);
+return last.reduce((a,b)=>a+b,0)/last.length;
+}
+
+//////////////// MAIN LOOP
 function onResults(results){
 
-  canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
-  canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
+ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.drawImage(results.image,0,0,canvas.width,canvas.height);
 
-  if(!results.poseLandmarks || teacherPoses.length===0) return;
+if(!results.poseLandmarks || teacherPoses.length===0) return;
 
-  let student = normalize(results.poseLandmarks);
-  let teacher = teacherPoses[Math.min(frameIndex, teacherPoses.length-1)];
+let student = normalize(results.poseLandmarks);
+let teacher = teacherPoses[Math.min(frameIndex, teacherPoses.length-1)];
 
-  let error = dist(student, teacher);
-  let rawScore = Math.max(0,100-error*180);
+studentPoses.push(student);
 
-  let score = smoothScore(rawScore);
+let error = dist(student,teacher);
+let score = smooth(Math.max(0,100-error*120));
 
-  // UI UPDATE
-  accuracyText.innerText = "Accuracy: " + score.toFixed(1) + "%";
-  errorText.innerText = "Error: " + error.toFixed(4);
-  feedbackText.innerText = getFeedback(score);
+document.getElementById("accuracy").innerText=score.toFixed(1)+"%";
+document.getElementById("error").innerText=error.toFixed(4);
+document.getElementById("gauge-fill").style.width=score+"%";
 
-  // PROGRESS BAR
-  bar.style.width = score + "%";
+document.getElementById("feedback").innerText =
+score>90?"🔥 Perfect":
+score>75?"👍 Good":
+"⚠ Improve";
 
-  // GLOW EFFECT
-  if(score > 85){
-    canvasElement.style.boxShadow = "0 0 20px #22c55e";
-  } else {
-    canvasElement.style.boxShadow = "none";
-  }
-
-  /////////////////////////////
-  // DRAW SKELETON
-  drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,{
-    color:"#00FFAA",
-    lineWidth:3
-  });
-
-  /////////////////////////////
-  // RED/GREEN JOINTS
-  for(let i=0;i<results.poseLandmarks.length;i++){
-
-    let dx=student[i].x-teacher[i].x;
-    let dy=student[i].y-teacher[i].y;
-    let d=Math.sqrt(dx*dx+dy*dy);
-
-    let color = d>0.05 ? "red" : "green";
-
-    drawLandmarks(canvasCtx,[results.poseLandmarks[i]],{
-      color: color,
-      lineWidth:5
-    });
-  }
-
-  frameIndex++;
+drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,{color:"#00FFAA"});
+for(let i=0;i<results.poseLandmarks.length;i++){
+let d=dist([student[i]],[teacher[i]]);
+let color=d>0.05?"red":"green";
+drawLandmarks(ctx,[results.poseLandmarks[i]],{color,lineWidth:5});
 }
 
-//////////////////////////////
-// CAMERA AUTO START
+frameIndex++;
+}
+
+//////////////// CAMERA
 const pose = new Pose({
-  locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
 });
-
-pose.setOptions({
-  modelComplexity:1,
-  smoothLandmarks:true
-});
-
 pose.onResults(onResults);
 
-const camera = new Camera(videoElement,{
-  onFrame: async ()=>{
-    await pose.send({image:videoElement});
-  },
-  width:640,
-  height:480
+const cam = new Camera(video,{
+onFrame: async()=>{ await pose.send({image:video}); },
+width:640,height:480
 });
+cam.start();
 
-camera.start();
+//////////////// FINISH
+function finishSession(){
+let error = dtw(studentPoses, teacherPoses);
+finalScore = Math.max(0,100-error*50);
+finalResult = finalScore>75?"PASS":"FAIL";
+
+document.getElementById("feedback").innerText =
+"Final Score: "+finalScore.toFixed(1)+"% - "+finalResult;
+}
+
+//////////////// PDF
+function downloadReport(){
+const { jsPDF } = window.jspdf;
+let doc=new jsPDF();
+
+doc.text("AI Dance Report",20,20);
+doc.text("Score: "+finalScore.toFixed(1)+"%",20,40);
+doc.text("Result: "+finalResult,20,60);
+
+doc.save("report.pdf");
+}
