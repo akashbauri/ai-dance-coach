@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="firebase.js"></script>
+</head>
+
+<body>
+
+<div class="card center-box">
+<h2 id="user"></h2>
+
+<button onclick="start()" class="btn big">Start Training</button>
+<button onclick="logout()" class="btn secondary">Logout</button>
+
+</div>
+
+<script>
+let user = JSON.parse(localStorage.getItem("user"));
+document.getElementById("user").innerText = user?.email || "User";
+
+function start(){
+  window.location.href = "app.html";
+}
+</script>
+
+</body>
+</html>
