@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+
+</head>
+
+<body>
+
+<h2>AI Dance Training</h2>
+
+<input type="file" id="uploadVideo">
+
+<div class="container">
+<video id="teacherVideo" controls></video>
+
+<video class="input_video" hidden></video>
+<canvas class="output_canvas"></canvas>
+</div>
+
+<div class="dashboard">
+<div id="accuracy">0%</div>
+<button onclick="finishSession()">Finish</button>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
