@@ -1,55 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>AI Dance Coach PRO | Final MVP</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>AI Dance Coach</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="firebase.js"></script>
 </head>
-<body>
 
-<div id="login-overlay" class="overlay">
-    <div class="login-card">
-        <h1>💎 AI DANCE COACH</h1>
-        <div class="auth-form">
-            <input type="email" id="email" placeholder="Email Address">
-            <input type="password" id="password" placeholder="Password">
-            <button class="btn-email" onclick="handleAuth('email')">Login</button>
-            <div class="divider">OR</div>
-            <button class="btn-google" onclick="handleAuth('google')">Sign in with Google</button>
-        </div>
-    </div>
+<body class="center">
+
+<div class="card">
+<h2>AI Dance Coach</h2>
+
+<button onclick="googleLogin()" class="btn google">Google Login</button>
+
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()" class="btn">Login</button>
+<button onclick="signup()" class="btn secondary">Signup</button>
+
 </div>
 
-<div id="app-content" style="display:none;">
-    <div class="header-controls">
-        <input type="file" id="uploadVideo" accept="video/*">
-        <button id="syncBtn" onclick="startSync()" disabled>🚀 START SYNC</button>
-        <button onclick="downloadPDF()">📥 DOWNLOAD RESULT</button>
-    </div>
-
-    <div class="studio">
-        <div class="viewport">
-            <span class="tag">TEACHER GUIDE</span>
-            <video id="teacherVideo"></video>
-        </div>
-
-        <div class="viewport">
-            <span class="tag">YOUR PERFORMANCE</span>
-            <div class="hud">
-                <div class="hud-item">ACCURACY: <span id="acc-val">0%</span></div>
-                <div class="hud-item">ERROR: <span id="err-val">0.00</span></div>
-                <div id="feedback-tag" class="status-msg">READY</div>
-            </div>
-            <canvas id="output_canvas"></canvas>
-            <video id="webcam_video" style="display:none"></video>
-        </div>
-    </div>
-</div>
-
-<script type="module" src="script.js"></script>
 </body>
 </html>
