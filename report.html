@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+<h2 id="result"></h2>
+<canvas id="chart"></canvas>
+<button onclick="pdf()">Download PDF</button>
+
+<script>
+let data=JSON.parse(localStorage.getItem("reportData"));
+
+document.getElementById("result").innerText=
+"Score: "+data.score+"% - "+data.result;
+
+new Chart(document.getElementById("chart"),{
+  type:'line',
+  data:{
+    labels:[1,2,3],
+    datasets:[{data:[60,80,90]}]
+  }
+});
+
+function pdf(){
+  const { jsPDF }=window.jspdf;
+  let doc=new jsPDF();
+  doc.text("Dance Report",20,20);
+  doc.text("Score: "+data.score,20,40);
+  doc.save("report.pdf");
+}
+</script>
+
+</body>
+</html>
