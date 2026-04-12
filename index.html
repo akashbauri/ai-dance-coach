@@ -12,49 +12,52 @@
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
 
-    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
         <div class="glass p-10 rounded-3xl text-center shadow-2xl max-w-sm w-full border border-white/10">
             <h1 class="text-3xl font-black mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">AI DANCE COACH</h1>
-            <p class="text-slate-400 mb-8 text-sm">Professional AI feedback for your journey.</p>
-            <button id="login-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+            <p class="text-slate-400 mb-8 text-xs font-medium">Professional AI feedback for your journey.</p>
+            
+            <div class="space-y-3 mb-6">
+                <input type="email" id="email-input" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 transition-all">
+                <input type="password" id="pass-input" placeholder="Password" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 transition-all">
+                <button id="email-btn" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-xs font-bold transition-all active:scale-95">LOGIN WITH EMAIL</button>
+            </div>
+
+            <div class="flex items-center gap-2 mb-6 text-slate-600 text-[10px] font-bold">
+                <div class="h-px bg-slate-800 flex-1"></div> OR <div class="h-px bg-slate-800 flex-1"></div>
+            </div>
+
+            <button id="google-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-blue-500/20">
                 SIGN IN WITH GOOGLE
             </button>
         </div>
     </div>
 
     <div id="app-screen" class="hidden h-screen flex flex-col p-4">
-        <header class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-black italic text-blue-400">DANCE COACH PRO</h2>
-            <div class="flex items-center gap-3">
-                <button id="download-btn" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-xs font-bold border border-slate-700">📥 Export Report</button>
-                <div id="user-display" class="text-xs font-medium text-slate-300 bg-white/5 px-3 py-2 rounded-lg border border-white/10"></div>
-            </div>
+        <header class="flex justify-between items-center mb-4 px-2">
+            <h2 class="text-xl font-black italic text-blue-400 tracking-tighter">DANCE COACH PRO</h2>
+            <div id="user-tag" class="text-[10px] font-bold text-slate-400 bg-white/5 px-3 py-2 rounded-lg border border-white/10"></div>
         </header>
 
         <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
-            <div class="relative rounded-2xl overflow-hidden bg-black border border-white/5 group">
-                <video id="teacher-video" class="w-full h-full object-cover" loop muted controls></video>
-                <div class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <label for="video-upload" class="cursor-pointer bg-white text-black px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition">📁 Upload Reference</label>
-                    <input type="file" id="video-upload" accept="video/*" class="hidden">
+            <div class="relative rounded-3xl overflow-hidden bg-black border border-white/5 group">
+                <video id="teacher-vid" class="w-full h-full object-cover" loop muted controls></video>
+                <div class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all">
+                    <label for="vid-upload" class="cursor-pointer bg-white text-black px-6 py-2 rounded-full font-bold text-xs hover:scale-105 transition">📁 Upload Teacher Video</label>
+                    <input type="file" id="vid-upload" accept="video/*" class="hidden">
                 </div>
-                <div class="absolute top-3 left-3 bg-blue-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Teacher</div>
             </div>
 
-            <div class="relative rounded-2xl overflow-hidden bg-black border border-white/5">
-                <video id="user-video" class="w-full h-full object-cover"></video>
-                <canvas id="canvas-overlay" class="absolute inset-0 w-full h-full"></canvas>
-                <div class="absolute top-3 left-3 bg-purple-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Live Performance</div>
+            <div class="relative rounded-3xl overflow-hidden bg-black border border-white/5">
+                <video id="user-vid" class="w-full h-full object-cover"></video>
+                <canvas id="pose-canvas" class="absolute inset-0 w-full h-full"></canvas>
                 
-                <div class="absolute bottom-4 right-4 glass p-4 rounded-xl w-48 border border-white/10">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] font-bold text-slate-400">ACCURACY</span>
-                        <span id="accuracy-score" class="text-2xl font-black text-emerald-400">0%</span>
+                <div class="absolute bottom-6 right-6 glass p-5 rounded-2xl w-48 border border-white/10">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1">REAL-TIME ACCURACY</p>
+                    <div id="accuracy-txt" class="text-4xl font-black text-emerald-400">0%</div>
+                    <div class="w-full bg-slate-800 h-1.5 mt-3 rounded-full overflow-hidden">
+                        <div id="acc-bar" class="h-full bg-emerald-500 w-0 transition-all duration-500"></div>
                     </div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div id="score-bar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
-                    </div>
-                    <p id="feedback-txt" class="text-[9px] mt-2 text-center text-slate-400 italic">Positioning...</p>
                 </div>
             </div>
         </main>
