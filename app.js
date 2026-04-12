@@ -10,69 +10,75 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-const loginBtn = document.getElementById('login-btn');
+// Screen Elements
 const loginScreen = document.getElementById('login-screen');
 const appScreen = document.getElementById('app-screen');
-const userVideo = document.getElementById('user-video');
-const teacherVideo = document.getElementById('teacher-video');
-const videoUpload = document.getElementById('video-upload');
-const canvasElement = document.getElementById('canvas-overlay');
-const canvasCtx = canvasElement.getContext('2d');
-const scoreText = document.getElementById('accuracy-score');
-const scoreBar = document.getElementById('score-bar');
-const feedback = document.getElementById('feedback-txt');
+const userTag = document.getElementById('user-tag');
 
-loginBtn.onclick = () => {
+// Logic for Success
+const goInside = (name) => {
+    loginScreen.classList.add('hidden');
+    appScreen.classList.remove('hidden');
+    userTag.innerText = `👤 ${name.toUpperCase()}`;
+    startAI();
+};
+
+// 1. Google Login
+document.getElementById('google-btn').onclick = () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).then((res) => {
-        loginScreen.classList.add('hidden');
-        appScreen.classList.remove('hidden');
-        document.getElementById('user-display').innerText = `👤 ${res.user.displayName}`;
-        startCamera();
-    });
+    auth.signInWithPopup(provider)
+        .then((res) => goInside(res.user.displayName))
+        .catch((err) => alert("Google Help: Ensure your domain is added in Firebase!"));
+
 };
 
-videoUpload.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        teacherVideo.src = URL.createObjectURL(file);
-        teacherVideo.play();
-    }
+// 2. Email/Password Login
+document.getElementById('email-btn').onclick = () => {
+    const email = document.getElementById('email-input').value;
+    const pass = document.getElementById('pass-input').value;
+    
+    auth.signInWithEmailAndPassword(email, pass)
+        .then((res) => goInside(res.user.email))
+        .catch((err) => {
+            if(err.code === 'auth/user-not-found') {
+                auth.createUserWithEmailAndPassword(email, pass).then((res) => goInside(res.user.email));
+            } else { alert(err.message); }
+        });
 };
 
-const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+// AI Vision Logic
+const userVid = document.getElementById('user-vid');
+const teacherVid = document.getElementById('teacher-vid');
+const canvas = document.getElementById('pose-canvas');
+const ctx = canvas.getContext('2d');
+
+const pose = new Pose({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
 pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
 
-pose.onResults((results) => {
-    canvasElement.width = userVideo.clientWidth;
-    canvasElement.height = userVideo.clientHeight;
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+pose.onResults((res) => {
+    canvas.width = userVid.clientWidth;
+    canvas.height = userVid.clientHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if (results.poseLandmarks) {
-        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
-        drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#FF0000', lineWidth: 1, radius: 3});
+    if (res.poseLandmarks) {
+        drawConnectors(ctx, res.poseLandmarks, POSE_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
+        drawLandmarks(ctx, res.poseLandmarks, {color: '#FF0000', radius: 4});
         
-        let vis = results.poseLandmarks.reduce((acc, lm) => acc + lm.visibility, 0);
-        let score = Math.round((vis / 33) * 100);
-        scoreText.innerText = `${score}%`;
-        scoreBar.style.width = `${score}%`;
-        feedback.innerText = score > 70 ? "PERFECT!" : "KEEP MOVING";
+        let score = Math.round(res.poseLandmarks[0].visibility * 100);
+        document.getElementById('accuracy-txt').innerText = `${score}%`;
+        document.getElementById('acc-bar').style.width = `${score}%`;
     }
 });
 
-async function startCamera() {
-    const camera = new Camera(userVideo, {
-        onFrame: async () => { await pose.send({image: userVideo}); },
+async function startAI() {
+    const camera = new Camera(userVid, {
+        onFrame: async () => { await pose.send({image: userVid}); },
         width: 1280, height: 720
     });
     camera.start();
 }
 
-document.getElementById('download-btn').onclick = () => {
-    const content = `Session Report\nScore: ${scoreText.innerText}\nDate: ${new Date().toLocaleDateString()}`;
-    const blob = new Blob([content], {type: 'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = "dance-report.txt";
-    a.click();
+document.getElementById('vid-upload').onchange = (e) => {
+    teacherVid.src = URL.createObjectURL(e.target.files[0]);
+    teacherVid.play();
 };
