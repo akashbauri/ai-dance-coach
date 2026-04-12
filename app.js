@@ -1,105 +1,109 @@
-const videoElement = document.getElementById("userVideo");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+    apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
+    authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
+    projectId: "ai-dance-coach-1ecb8",
+    storageBucket: "ai-dance-coach-1ecb8.firebasestorage.app",
+    messagingSenderId: "1023492993370",
+    appId: "1:1023492993370:web:9bd0b563a8f565f074c363",
+    measurementId: "G-LN1SJMB5J8"
+};
 
-let userLandmarks = null;
-let teacherLandmarks = null;
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-// 🔥 MEDIAPIPE SETUP
+// UI Elements
+const loginBtn = document.getElementById('login-btn');
+const loginScreen = document.getElementById('login-screen');
+const appScreen = document.getElementById('app-screen');
+const userDisplay = document.getElementById('user-display');
+const userVideo = document.getElementById('user-video');
+const teacherVideo = document.getElementById('teacher-video');
+const videoUpload = document.getElementById('video-upload');
+const canvasElement = document.getElementById('canvas-overlay');
+const canvasCtx = canvasElement.getContext('2d');
+const scoreText = document.getElementById('accuracy-score');
+const scoreBar = document.getElementById('score-bar');
+const feedback = document.getElementById('feedback-text');
+
+// 🔐 AUTH LOGIC
+loginBtn.addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).then((result) => {
+        loginScreen.classList.add('hidden');
+        appScreen.classList.remove('hidden');
+        userDisplay.innerText = `👤 ${result.user.displayName}`;
+        startCamera();
+    }).catch(err => alert(err.message));
+});
+
+// 📁 UPLOAD LOGIC
+videoUpload.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const videoURL = URL.createObjectURL(file);
+        teacherVideo.src = videoURL;
+        teacherVideo.load();
+        teacherVideo.play();
+        feedback.innerText = "VIDEO LOADED! START MOVING.";
+    }
+});
+
+// 🤖 AI POSE ENGINE
 const pose = new Pose({
-  locateFile: (file) =>
-    `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
 });
 
 pose.setOptions({
-  modelComplexity: 1,
-  smoothLandmarks: true,
-  minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.5
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
 });
 
-// 🎯 RESULTS CALLBACK
 pose.onResults((results) => {
-
-  canvas.width = videoElement.videoWidth;
-  canvas.height = videoElement.videoHeight;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // draw video
-  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-  if (results.poseLandmarks) {
-    userLandmarks = results.poseLandmarks;
-
-    drawSkeleton(results.poseLandmarks);
-    calculateAccuracy();
-  }
+    canvasElement.width = userVideo.clientWidth;
+    canvasElement.height = userVideo.clientHeight;
+    
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    
+    if (results.poseLandmarks) {
+        // Drawing the Skeleton (Green lines, Red dots)
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#10b981', lineWidth: 4});
+        drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#ef4444', lineWidth: 1, radius: 4});
+        
+        // AI Scoring Math
+        let confidence = 0;
+        results.poseLandmarks.forEach(lm => confidence += lm.visibility);
+        let score = Math.round((confidence / 33) * 100);
+        
+        scoreText.innerText = `${score}%`;
+        scoreBar.style.width = `${score}%`;
+        
+        if (score > 80) feedback.innerText = "⭐ PERFECT!";
+        else if (score > 50) feedback.innerText = "NICE MOVES!";
+        else feedback.innerText = "STAY IN FRAME";
+    }
+    canvasCtx.restore();
 });
 
-// 🎥 CAMERA
-const camera = new Camera(videoElement, {
-  onFrame: async () => {
-    await pose.send({ image: videoElement });
-  },
-  width: 640,
-  height: 480
-});
-
-camera.start();
-
-
-// 🔴 DRAW SKELETON
-function drawSkeleton(landmarks) {
-
-  // RED POINTS
-  landmarks.forEach((lm) => {
-    ctx.beginPath();
-    ctx.arc(lm.x * canvas.width, lm.y * canvas.height, 5, 0, 2 * Math.PI);
-    ctx.fillStyle = "red";
-    ctx.fill();
-  });
-
-  // GREEN LINES
-  const connections = [
-    [11,13],[13,15],
-    [12,14],[14,16],
-    [11,12],
-    [23,24],
-    [11,23],[12,24],
-    [23,25],[25,27],
-    [24,26],[26,28]
-  ];
-
-  connections.forEach(([a, b]) => {
-    const p1 = landmarks[a];
-    const p2 = landmarks[b];
-
-    ctx.beginPath();
-    ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
-    ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
-    ctx.strokeStyle = "lime";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  });
+function startCamera() {
+    const camera = new Camera(userVideo, {
+        onFrame: async () => { await pose.send({image: userVideo}); },
+        width: 1280, height: 720
+    });
+    camera.start();
 }
 
-
-// 🎯 ACCURACY CALCULATION (BASIC VERSION)
-function calculateAccuracy() {
-  if (!userLandmarks || !teacherLandmarks) return;
-
-  let error = 0;
-
-  for (let i = 0; i < userLandmarks.length; i++) {
-    let dx = userLandmarks[i].x - teacherLandmarks[i].x;
-    let dy = userLandmarks[i].y - teacherLandmarks[i].y;
-
-    error += Math.sqrt(dx * dx + dy * dy);
-  }
-
-  let score = Math.max(0, 100 - error * 100);
-
-  document.getElementById("accuracy").innerText =
-    "Accuracy: " + score.toFixed(2) + "%";
-}
+// 📥 DOWNLOAD RESULT
+document.getElementById('download-btn').onclick = () => {
+    const finalScore = scoreText.innerText;
+    const date = new Date().toLocaleString();
+    const content = `AI DANCE COACH REPORT\n--------------------\nDate: ${date}\nFinal Score: ${finalScore}\nKeep Dancing!`;
+    const blob = new Blob([content], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "Dance_Performance.txt";
+    a.click();
+};
