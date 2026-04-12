@@ -1,98 +1,32 @@
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
+/* Custom styles for AI Dance Coach */
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
-body{
-font-family: 'Segoe UI', sans-serif;
-background: linear-gradient(135deg,#0f172a,#020617);
-color:white;
-text-align:center;
+.animate-fadeIn {
+    animation: fadeIn 0.8s ease-out forwards;
 }
 
-/* HEADER */
-h1{
-margin-top:20px;
-font-size:30px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* LAYOUT */
-.container{
-display:flex;
-justify-content:center;
-gap:40px;
-margin-top:30px;
-flex-wrap:wrap;
+/* Red dots for landmarks as seen in your demo */
+.landmark-point {
+    filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
 }
 
-/* CARD */
-.card{
-background:rgba(255,255,255,0.05);
-padding:20px;
-border-radius:20px;
-box-shadow:0 20px 50px rgba(0,0,0,0.6);
+/* Glassmorphism scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
 }
-
-.card h3{
-margin-bottom:10px;
+::-webkit-scrollbar-track {
+    background: #0f172a;
 }
-
-/* VIDEO + CANVAS FIX */
-video, canvas{
-width:420px;
-height:320px;
-border-radius:15px;
-object-fit:cover;
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
 }
-
-/* DASHBOARD */
-.dashboard{
-margin-top:40px;
-display:flex;
-flex-direction:column;
-align-items:center;
-gap:20px;
-}
-
-/* METRICS */
-.metrics{
-display:flex;
-gap:20px;
-}
-
-.metric{
-background:rgba(255,255,255,0.05);
-padding:15px;
-border-radius:15px;
-width:120px;
-}
-
-/* PROGRESS */
-.progress{
-width:300px;
-height:15px;
-background:#1e293b;
-border-radius:10px;
-overflow:hidden;
-}
-
-.progress-bar{
-height:100%;
-width:0%;
-background:linear-gradient(90deg,red,yellow,green);
-transition:0.3s;
-}
-
-/* BUTTON */
-button{
-padding:10px 20px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-margin-top:10px;
-}
-
-.primary{background:#22c55e;color:white;}
-.secondary{background:#334155;color:white;}
-.google{background:#db4437;color:white;}
