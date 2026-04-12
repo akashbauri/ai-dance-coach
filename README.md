@@ -1,47 +1,19 @@
-# 💎 AI Dance Coach PRO (Advanced)
+# AI Dance Coach PRO 🕺
 
-## 🚀 Features
+An advanced real-time AI dance trainer that uses Computer Vision to help you master choreography.
 
-* 🎥 Real-time dance tracking (500+ keypoints)
-* 🔴 Wrong joint detection (visual)
-* 🎤 Voice feedback (AI coach)
-* 📊 Live performance graph
-* 🧠 Adaptive AI scoring
-* 💃 Dance style detection
-* 🏆 Leaderboard system
-* 🔐 Firebase login + storage
-* 📄 Downloadable report
+## ✨ Features
+- **Google Authentication**: Secure sign-in via Firebase.
+- **Custom Uploads**: Upload any video and use it as a reference teacher.
+- **AI Pose Tracking**: Powered by MediaPipe BlazePose for 33-point tracking.
+- **Real-time Scoring**: Get instant accuracy feedback on your moves.
+- **Export Reports**: Download your performance stats as a text file.
 
----
+## 🚀 Live Demo
+Check it out here: [https://ai-dance-coach-8owx.vercel.app](https://ai-dance-coach-8owx.vercel.app)
 
-## 🧠 Tech Stack
-
-* MediaPipe Holistic
-* Firebase (Auth + Firestore)
-* Chart.js
-* Web Speech API
-
----
-
-## 🎯 How It Works
-
-1. Upload teacher video
-2. AI extracts pose
-3. Webcam tracks user
-4. Compare poses
-5. Detect mistakes
-6. Give voice + visual feedback
-7. Save results
-8. Show leaderboard
-
----
-
-## 🏆 Leaderboard
-
-Top users based on highest score stored in Firebase
-
----
-
-## 👨‍💻 Author
-
-Akash Bauri
+## 🛠️ Tech Stack
+- **Frontend**: HTML5, Tailwind CSS, JavaScript.
+- **AI**: Google MediaPipe Pose.
+- **Backend**: Firebase Auth.
+- **Hosting**: Vercel.
