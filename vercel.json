@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "framework": null,
+  "installCommand": "npm install",
+  "build": {
+    "env": {
+      "FIREBASE_API_KEY": "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM"
+    }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
