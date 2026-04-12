@@ -1,4 +1,4 @@
-// --- FIREBASE CONFIG ---
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyCjPINWcbljGrEKkQbXnSEA377VRZ8tErM",
     authDomain: "ai-dance-coach-1ecb8.firebaseapp.com",
@@ -9,10 +9,11 @@ const firebaseConfig = {
     measurementId: "G-LN1SJMB5J8"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-// UI Elements
+// UI Selectors
 const loginBtn = document.getElementById('login-btn');
 const loginScreen = document.getElementById('login-screen');
 const appScreen = document.getElementById('app-screen');
@@ -24,32 +25,35 @@ const canvasElement = document.getElementById('canvas-overlay');
 const canvasCtx = canvasElement.getContext('2d');
 const scoreText = document.getElementById('accuracy-score');
 const scoreBar = document.getElementById('score-bar');
-const feedback = document.getElementById('feedback-text');
+const feedback = document.getElementById('feedback-txt');
 
-// 🔐 AUTH LOGIC
+// 🔐 Authentication Logic
 loginBtn.addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).then((result) => {
         loginScreen.classList.add('hidden');
         appScreen.classList.remove('hidden');
         userDisplay.innerText = `👤 ${result.user.displayName}`;
-        startCamera();
-    }).catch(err => alert(err.message));
+        startLiveCam();
+    }).catch(error => {
+        console.error("Auth Error:", error);
+        alert("Google Sign-In failed. Check your Firebase console settings.");
+    });
 });
 
-// 📁 UPLOAD LOGIC
-videoUpload.addEventListener('change', function(e) {
-    const file = e.target.files[0];
+// 📁 Dynamic Video Upload Handler
+videoUpload.addEventListener('change', (event) => {
+    const file = event.target.files[0];
     if (file) {
-        const videoURL = URL.createObjectURL(file);
-        teacherVideo.src = videoURL;
+        const url = URL.createObjectURL(file);
+        teacherVideo.src = url;
         teacherVideo.load();
         teacherVideo.play();
-        feedback.innerText = "VIDEO LOADED! START MOVING.";
+        feedback.innerText = "VIDEO LOADED. MIRROR THE TEACHER!";
     }
 });
 
-// 🤖 AI POSE ENGINE
+// 🤖 MediaPipe Pose AI Logic
 const pose = new Pose({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
 });
@@ -57,11 +61,12 @@ const pose = new Pose({
 pose.setOptions({
     modelComplexity: 1,
     smoothLandmarks: true,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6
 });
 
-pose.onResults((results) => {
+function onResults(results) {
+    // Dynamically resize canvas
     canvasElement.width = userVideo.clientWidth;
     canvasElement.height = userVideo.clientHeight;
     
@@ -69,26 +74,28 @@ pose.onResults((results) => {
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     
     if (results.poseLandmarks) {
-        // Drawing the Skeleton (Green lines, Red dots)
-        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#10b981', lineWidth: 4});
-        drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#ef4444', lineWidth: 1, radius: 4});
+        // Draw Performance skeleton (Cyan lines, White dots)
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {color: '#22d3ee', lineWidth: 4});
+        drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#ffffff', lineWidth: 1, radius: 4});
         
-        // AI Scoring Math
-        let confidence = 0;
-        results.poseLandmarks.forEach(lm => confidence += lm.visibility);
-        let score = Math.round((confidence / 33) * 100);
+        // Scoring Algorithm based on limb visibility and movement
+        let totalConfidence = 0;
+        results.poseLandmarks.forEach(lm => totalConfidence += lm.visibility);
+        let score = Math.round((totalConfidence / 33) * 100);
         
         scoreText.innerText = `${score}%`;
         scoreBar.style.width = `${score}%`;
         
-        if (score > 80) feedback.innerText = "⭐ PERFECT!";
-        else if (score > 50) feedback.innerText = "NICE MOVES!";
-        else feedback.innerText = "STAY IN FRAME";
+        if (score > 85) feedback.innerText = "🔥 ELITE PERFORMANCE!";
+        else if (score > 50) feedback.innerText = "GOOD FLOW. KEEP IT UP!";
+        else feedback.innerText = "ADJUST YOUR POSITION";
     }
     canvasCtx.restore();
-});
+}
 
-function startCamera() {
+pose.onResults(onResults);
+
+function startLiveCam() {
     const camera = new Camera(userVideo, {
         onFrame: async () => { await pose.send({image: userVideo}); },
         width: 1280, height: 720
@@ -96,14 +103,23 @@ function startCamera() {
     camera.start();
 }
 
-// 📥 DOWNLOAD RESULT
+// 📥 Export Performance Report
 document.getElementById('download-btn').onclick = () => {
-    const finalScore = scoreText.innerText;
-    const date = new Date().toLocaleString();
-    const content = `AI DANCE COACH REPORT\n--------------------\nDate: ${date}\nFinal Score: ${finalScore}\nKeep Dancing!`;
-    const blob = new Blob([content], {type: 'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = "Dance_Performance.txt";
-    a.click();
+    const currentScore = scoreText.innerText;
+    const reportData = `
+AI DANCE COACH PRO - SESSION REPORT
+-----------------------------------
+User: ${userDisplay.innerText}
+Date: ${new Date().toLocaleString()}
+Accuracy Score: ${currentScore}
+Status: Completed
+-----------------------------------
+Keep practicing to reach 100%!
+    `;
+    const blob = new Blob([reportData], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = "Dance_Session_Report.txt";
+    link.click();
 };
