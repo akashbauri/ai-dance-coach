@@ -1,25 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>AI Dance Coach</title>
-<link rel="stylesheet" href="style.css">
-<script type="module" src="firebase.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Coach | AI Powered</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+    <style>
+        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        #canvas-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); }
+    </style>
 </head>
+<body class="gradient-bg text-white font-sans min-h-screen">
 
-<body class="center">
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
+        <div class="glass p-12 rounded-3xl text-center shadow-2xl max-w-md w-full mx-4">
+            <div class="mb-6 inline-block p-4 bg-blue-600 rounded-full animate-pulse text-3xl">🕺</div>
+            <h1 class="text-4xl font-black mb-2 tracking-tight">DANCE COACH</h1>
+            <p class="text-slate-400 mb-8 font-medium">Master the rhythm with Real-Time AI.</p>
+            <button id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-blue-500 hover:text-white transition-all duration-300">
+                Sign in with Google
+            </button>
+        </div>
+    </div>
 
-<div class="login-card">
-<h1>💎 AI Dance Coach</h1>
+    <div id="app-screen" class="hidden h-screen flex flex-col p-6">
+        <header class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-black text-blue-400 tracking-tighter italic">DANCE COACH</h2>
+            <div class="flex items-center gap-4">
+                <button id="download-btn" class="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl text-sm font-bold border border-slate-700">📥 Download Result</button>
+                <div id="user-display" class="bg-blue-900/30 px-4 py-2 rounded-xl text-sm border border-blue-500/30"></div>
+            </div>
+        </header>
 
-<button onclick="googleLogin()" class="btn google">Google Login</button>
+        <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
+            <div class="relative rounded-3xl overflow-hidden bg-black border border-slate-800 group shadow-2xl">
+                <video id="teacher-video" class="w-full h-full object-cover" loop muted controls></video>
+                
+                <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label for="video-upload" class="cursor-pointer bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-xl hover:bg-blue-500 transition">
+                        📁 Upload Dance Video
+                    </label>
+                    <input type="file" id="video-upload" accept="video/*" class="hidden">
+                    <p class="text-xs mt-3 text-slate-300 uppercase tracking-widest font-bold">Upload any dance to mirror</p>
+                </div>
+                <div class="absolute top-4 left-4 bg-blue-600 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">Reference</div>
+            </div>
 
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
+            <div class="relative rounded-3xl overflow-hidden bg-black border border-slate-800 shadow-2xl">
+                <video id="user-video" class="w-full h-full object-cover"></video>
+                <canvas id="canvas-overlay"></canvas>
+                <div class="absolute top-4 left-4 bg-purple-600 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">Live Cam</div>
+                
+                <div class="absolute bottom-6 right-6 glass p-6 rounded-2xl w-64 border border-white/10">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Accuracy</span>
+                        <span id="accuracy-score" class="text-4xl font-black text-green-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div id="score-bar" class="bg-gradient-to-r from-green-500 to-emerald-300 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <p id="feedback-text" class="text-[10px] mt-3 text-center text-slate-400 italic font-medium uppercase tracking-widest">Ready to Dance?</p>
+                </div>
+            </div>
+        </main>
+    </div>
 
-<button onclick="login()" class="btn primary">Login</button>
-<button onclick="signup()" class="btn secondary">Signup</button>
-
-</div>
-
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
