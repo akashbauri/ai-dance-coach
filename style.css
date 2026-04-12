@@ -1,17 +1,13 @@
 .glass {
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
-#canvas-overlay {
-    pointer-events: none;
+#user-vid {
+    transform: scaleX(-1); /* Mirrors the user so it's natural */
 }
 
-video {
-    transform: scaleX(-1); /* Mirror effect for the user */
-}
-
-#teacher-video {
-    transform: scaleX(1); /* Keep teacher video normal */
+input::placeholder {
+    color: #475569;
 }
